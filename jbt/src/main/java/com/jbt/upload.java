@@ -38,29 +38,57 @@ public class upload {
 		MultiMap INSTITUTIONS = new MultiValueMap();
 
 		Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(fileName));
-		Connection conn = MysqlConnect.connection(host,user,passwd);
-
+	
 		for (CSVRecord record : records) {
+			//question for Evgeny: Is the project number ever missing?
 			String project__PROJECT_NUMBER = record.get("project__PROJECT_NUMBER");
-			String institution_index__inst_id = record.get("institution_index__inst_id");
-			String investigator_index__inv_id = record.get("investigator_index__inv_id");
-			String investigator_data__name = record.get("investigator_data__name");
-			conn = MysqlConnect.connection(host,user,passwd);
+			String institution_index__inst_id = "";
+			String investigator_index__inv_id= "";
+			String investigator_data__name ="";
+			String end = "";
+			try {
+				institution_index__inst_id = record.get("institution_index__inst_id");
+			}
+			catch(Exception e) {;}
+			try {
+				investigator_index__inv_id = record.get("investigator_index__inv_id");
+			}
+			catch(Exception e) {;}
+			try {
+				end = record.get("project__PROJECT_END_DATE");	
+			
+			}
+			catch(Exception e) {;} 
 
-			if (institution_index__inst_id == "-1")  institution_index__inst_id = checkAddInst(record, host, user, passwd, dbname);
+			Connection conn = MysqlConnect.connection(host,user,passwd);
+
+			// Check which csv file we are parsing, and if it is something specific, the institutions are not required. So modify logic. 
+			//AE: So I did this in the getPiID function. If there institution_name is missing, the query gets all PIs, if not then limits to institution.
+			if (institution_index__inst_id.equals("-1"))  institution_index__inst_id = checkAddInst(record, host, user, passwd, dbname);
 			investigator_index__inv_id = getPIid(record, institution_index__inst_id, host, user, passwd, dbname);
 			
 			//Project number	
-			String query = "SELECT * FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" order by date_entered desc limit 1";
+			String query = "SELECT * FROM "+dbname+".project p inner join institution_index inst on inst.pid =  p.id inner join investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" order by date_entered desc limit 1";
 			ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
 			try {
 				result.next();
 				String t = result.getString("PROJECT_NUMBER");
-				updateRecord(record, result, host, user, passwd, dbname);
-				// Add the new PI and Inst information to   a dictionary
-				PIS.put(result.getString("PROJECT_NUMBER"), investigator_index__inv_id);
-				INSTITUTIONS.put(result.getString("PROJECT_NUMBER"), institution_index__inst_id);
-			}
+				String inst = result.getString("inst_id");
+				String investigator = result.getString("inv_id");
+				String endDate = result.getString("END_DATE");
+				// AT least one of these things should have real new value, before we update
+				if(!investigator_index__inv_id.equals("-1") || !institution_index__inst_id.equals("-1")) {
+					if (!investigator.equalsIgnoreCase(investigator_index__inv_id) || !inst.equalsIgnoreCase(institution_index__inst_id) || !endDate.equalsIgnoreCase(end))  {
+						// Add the new PI and Inst information to   a dictionary, but only if it is not -1. 
+						if (!investigator_index__inv_id.equals("-1"))
+							PIS.put(result.getString("PROJECT_NUMBER"), investigator_index__inv_id);
+						if (!institution_index__inst_id.equals("-1"))
+							INSTITUTIONS.put(result.getString("PROJECT_NUMBER"), institution_index__inst_id);
+						updateRecord(record, result, host, user, passwd, dbname);
+						}
+				}
+				
+				}
 			catch (Exception ex) {
 				insertRecord(record, institution_index__inst_id, investigator_index__inv_id, host, user, passwd, dbname);
 			}
@@ -70,7 +98,7 @@ public class upload {
 		}
 
 		// Now we can update the index tables with all new PI and Institution information.  
-
+		Connection conn = MysqlConnect.connection(host,user,passwd);
 		// PI TABLE
 		Set<String> keys = PIS.keySet();
 		for(String s : keys) {
@@ -321,6 +349,7 @@ public class upload {
 			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 		}
 		// Insert the new project into investigator_index
+		conn = MysqlConnect.connection(host,user,passwd);
 		insertQuery = "INSERT INTO " + dbname + ".institution_data (pid, inv_id)"
 				+ " VALUES (?, ?);";
 		try {
@@ -336,6 +365,7 @@ public class upload {
 
 
 		// Insert the new project into institution_index
+		conn = MysqlConnect.connection(host,user,passwd);
 		insertQuery = "INSERT INTO " + dbname + ".investigator_index (pid, inv_id)"
 				+ " VALUES (?, ?);";
 		try {
@@ -349,10 +379,6 @@ public class upload {
 		finally {
 			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 		}
-		try {
-			conn.close();
-		}
-		catch(Exception e) {;}
 		
 	}
 
@@ -559,8 +585,12 @@ public class upload {
 	}
 
 	public static String checkAddInst(CSVRecord record, String host, String user, String passwd, String dbname) {
-		String institution_data__INSTITUTION_NAME = record.get("institution_data__INSTITUTION_NAME");
-		String institution_index__inst_id = record.get("institution_index__inst_id");
+		String institution_data__INSTITUTION_NAME = "";
+		try {
+			institution_data__INSTITUTION_NAME = record.get("institution_data__INSTITUTION_NAME");
+		}
+		catch (Exception e) {return "-1";}
+		if (institution_data__INSTITUTION_NAME == "") return "-1";
 		Connection conn = MysqlConnect.connection(host, user, passwd);
 		String finalID = "";
 		// Let's make sure this institution definitely doesn't exist:
@@ -616,7 +646,7 @@ public class upload {
 		finally {
 			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 		}
-
+		conn = MysqlConnect.connection(host, user, passwd);
 		// Insert new record for the institute:
 		String INSTITUTION_NAME = "";
 		String INSTITUTION_DEPARTMENT = "";
@@ -630,10 +660,6 @@ public class upload {
 		String DATE_ENTERED = currentStamp;
 		String INSTITUTION_URL = "";
 
-		try {
-			INSTITUTION_NAME = record.get("institution_data__INSTITUTION_NAME");
-		}
-		catch(Exception e) {;}
 
 		try {
 			INSTITUTION_DEPARTMENT = record.get("institution_data__INSTITUTION_DEPARTMENT");
@@ -699,7 +725,11 @@ public class upload {
 			preparedStmt.execute();
 		}
 		catch (Exception e) {;}		
+		finally {
+			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
+		}
 
+		conn = MysqlConnect.connection(host, user, passwd);
 		String getID = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME = \"" +  record.get("institution_data__INSTITUTION_NAME") + "\";";
 		ResultSet ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
 		try {
@@ -712,10 +742,6 @@ public class upload {
 		finally {
 			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 		}
-		try {
-			conn.close();
-		}
-		catch(Exception e) {;}
 		return finalID;
 	}
 
@@ -724,12 +750,17 @@ public class upload {
 
 
 	public static String getPIid(CSVRecord record, String institution_index__inst_id, String host, String user, String passwd, String dbname) {
-		String query = "SELECT ID, name FROM "+dbname+".investigator_data where INSTITUTION = \""+institution_index__inst_id+"\"";
+		String investigator_data__name = record.get("investigator_data__name");
+		if (investigator_data__name.equals("")) return "-1";
+		String query = "";
+		if (!institution_index__inst_id.equalsIgnoreCase("-1"))
+			query = "SELECT ID, name FROM "+dbname+".investigator_data where INSTITUTION = \""+institution_index__inst_id+"\"";
+		else 
+			query = "SELECT ID, name FROM "+dbname+".investigator_data;";
 		Connection conn = MysqlConnect.connection(host,user,passwd);
 		ResultSet pis = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
 		String finalID = "";
-		String investigator_data__name = record.get("investigator_data__name");
-		double finalRatio = 1;
+		double finalRatio = 3;
 
 		String finalPI = "";
 		try {
@@ -738,14 +769,14 @@ public class upload {
 				String piname = pis.getString("name");
 				// Lets calculate the levenshtein distance for the rest to come up with the best match:
 				float len  = (investigator_data__name.length() > piname.length()) ? investigator_data__name.length() : piname.length();
-				double ratio =  StringUtils.getLevenshteinDistance(investigator_data__name.toLowerCase(), piname.toLowerCase())/len;
+				double ratio =  StringUtils.getLevenshteinDistance(investigator_data__name.toLowerCase(), piname.toLowerCase());
 				if (ratio < finalRatio) {
 					finalID = pis.getString("ID");
 					finalPI = piname;
 					finalRatio = ratio;
 				}
 			}
-			if (finalRatio < 0.25 ) {
+			if (finalRatio <= 2 ) {
 				return finalID;
 			}
 		}
@@ -788,7 +819,11 @@ public class upload {
 			
 		}
 		catch (Exception e) {;}		
+		finally {
+			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
+		}
 
+		conn = MysqlConnect.connection(host,user,passwd);
 		String getID = "SELECT ID FROM " + dbname + ".investigator_data WHERE name = \"" +  name  
 				+ "\" and INSTITUTION = " + INSTITUTION + ";";
 		ResultSet ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
@@ -802,10 +837,6 @@ public class upload {
 		finally {
 			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 		}
-		try {
-			conn.close();
-		}
-		catch(Exception e) {;}
 		return finalID;
 	}
 }
