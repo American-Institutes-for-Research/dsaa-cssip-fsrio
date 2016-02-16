@@ -42,13 +42,13 @@ public class upload {
 
 		for (CSVRecord record : records) {
 			String project__PROJECT_NUMBER = record.get("project__PROJECT_NUMBER");
-			String institution_data__ID = record.get("institution_data__ID");
-			String investigator_data__ID = record.get("investigator_data__ID");
+			String institution_index__inst_id = record.get("institution_index__inst_id");
+			String investigator_index__inv_id = record.get("investigator_index__inv_id");
 			String investigator_data__name = record.get("investigator_data__name");
 			conn = MysqlConnect.connection(host,user,passwd);
 
-			if (institution_data__ID == "-1")  institution_data__ID = checkAddInst(record, host, user, passwd, dbname);
-			investigator_data__ID = getPIid(record, institution_data__ID, host, user, passwd, dbname);
+			if (institution_index__inst_id == "-1")  institution_index__inst_id = checkAddInst(record, host, user, passwd, dbname);
+			investigator_index__inv_id = getPIid(record, institution_index__inst_id, host, user, passwd, dbname);
 			
 			//Project number	
 			String query = "SELECT * FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" order by date_entered desc limit 1";
@@ -58,11 +58,11 @@ public class upload {
 				String t = result.getString("PROJECT_NUMBER");
 				updateRecord(record, result, host, user, passwd, dbname);
 				// Add the new PI and Inst information to   a dictionary
-				PIS.put(result.getString("PROJECT_NUMBER"), investigator_data__ID);
-				INSTITUTIONS.put(result.getString("PROJECT_NUMBER"), institution_data__ID);
+				PIS.put(result.getString("PROJECT_NUMBER"), investigator_index__inv_id);
+				INSTITUTIONS.put(result.getString("PROJECT_NUMBER"), institution_index__inst_id);
 			}
 			catch (Exception ex) {
-				insertRecord(record, institution_data__ID, investigator_data__ID, host, user, passwd, dbname);
+				insertRecord(record, institution_index__inst_id, investigator_index__inv_id, host, user, passwd, dbname);
 			}
 			finally {
 				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
@@ -122,7 +122,7 @@ public class upload {
 		catch(Exception e) {;}
 	}
 
-	public static void insertRecord(CSVRecord record, String institution_data__ID, String investigator_data__ID, String host, String user, String passwd, String dbname) {
+	public static void insertRecord(CSVRecord record, String institution_index__inst_id, String investigator_index__inv_id, String host, String user, String passwd, String dbname) {
 		Connection conn = MysqlConnect.connection(host,user,passwd);
 		String insertQuery = "INSERT INTO " + dbname +".project (PROJECT_NUMBER, PROJECT_TITLE, source_url, "
 				+ "PROJECT_START_DATE, PROJECT_END_DATE, PROJECT_FUNDING, PROJECT_TYPE, "
@@ -326,7 +326,7 @@ public class upload {
 		try {
 			PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
 			preparedStmt2.setString(1, PROJECT_NUMBER);
-			preparedStmt2.setString(2, investigator_data__ID);	
+			preparedStmt2.setString(2, investigator_index__inv_id);	
 			preparedStmt2.execute();
 		}
 		catch (Exception e) {;}
@@ -341,7 +341,7 @@ public class upload {
 		try {
 			PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
 			preparedStmt2.setString(1, PROJECT_NUMBER);
-			preparedStmt2.setString(2, institution_data__ID);	
+			preparedStmt2.setString(2, institution_index__inst_id);	
 			preparedStmt2.execute();
 
 		}
@@ -560,7 +560,7 @@ public class upload {
 
 	public static String checkAddInst(CSVRecord record, String host, String user, String passwd, String dbname) {
 		String institution_data__INSTITUTION_NAME = record.get("institution_data__INSTITUTION_NAME");
-		String institution_data__ID = record.get("institution_data__ID");
+		String institution_index__inst_id = record.get("institution_index__inst_id");
 		Connection conn = MysqlConnect.connection(host, user, passwd);
 		String finalID = "";
 		// Let's make sure this institution definitely doesn't exist:
@@ -723,8 +723,8 @@ public class upload {
 
 
 
-	public static String getPIid(CSVRecord record, String institution_data__ID, String host, String user, String passwd, String dbname) {
-		String query = "SELECT ID, name FROM "+dbname+".investigator_data where INSTITUTION = \""+institution_data__ID+"\"";
+	public static String getPIid(CSVRecord record, String institution_index__inst_id, String host, String user, String passwd, String dbname) {
+		String query = "SELECT ID, name FROM "+dbname+".investigator_data where INSTITUTION = \""+institution_index__inst_id+"\"";
 		Connection conn = MysqlConnect.connection(host,user,passwd);
 		ResultSet pis = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
 		String finalID = "";
@@ -760,7 +760,7 @@ public class upload {
 		String name = investigator_data__name;
 		String EMAIL_ADDRESS = "";
 		String PHONE_NUMBER = "";
-		String INSTITUTION = institution_data__ID;
+		String INSTITUTION = institution_index__inst_id;
 		String DATE_ENTERED = currentStamp;
 
 		try {
