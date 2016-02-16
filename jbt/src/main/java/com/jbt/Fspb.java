@@ -4,7 +4,7 @@ package com.jbt;
  * Those links are logged and can be looked up manually to populate the database with this limited number of projects.
  */
 
-import gcardone.junidecode.Junidecode;
+import net.sf.junidecode.Junidecode;
 
 import java.io.BufferedWriter;
 import java.io.File;

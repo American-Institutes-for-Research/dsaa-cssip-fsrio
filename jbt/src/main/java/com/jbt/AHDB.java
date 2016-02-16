@@ -1,6 +1,6 @@
 package com.jbt;
 
-import gcardone.junidecode.Junidecode;
+import net.sf.junidecode.Junidecode;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
