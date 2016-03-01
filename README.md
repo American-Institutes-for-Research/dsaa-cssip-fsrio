@@ -40,7 +40,7 @@ For running upload:
 	java -jar jbt-0.0.1-SNAPSHOT-jar-with-dependencies.jar "processUpload.cfg" "password"
 
 For running scraping: 
- 	java -jar jbt-0.0.1-SNAPSHOT-jar-with-dependencies.jar "processUpload.cfg" "password"
+ 	java -jar jbt-0.0.1-SNAPSHOT-jar-with-dependencies.jar "process.cfg" "password"
 
 How to open the tsv files generated in Excel:  
 1. Open Excel, go to Data tab.  
