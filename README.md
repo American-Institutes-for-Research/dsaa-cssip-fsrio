@@ -29,6 +29,10 @@ For running scraping:
 
 ## Using prebuilt jar file
 
+To build mvn executable, run the following in /fsrio/jbt: mvn install  
+The jar file will be places in /fsrio/jbt/target. Make sure to move it to /fsrio/jbt.  
+
+
 To avoid compiling, the executable jar can be used to run the program as follows:  
 1. Clone the directoy to your  local drive.  
 2. cd into FSRIO/jbt  

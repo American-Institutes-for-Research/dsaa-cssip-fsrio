@@ -68,7 +68,7 @@ public class upload {
 			investigator_index__inv_id = getPIid(record, institution_index__inst_id, host, user, passwd, dbname);
 			
 			//Project number	
-			String query = "use "+dbname+ "; SELECT * FROM "+dbname+".project p inner join institution_index inst on inst.pid =  p.id inner join investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" order by date_entered desc limit 1";
+			String query = "use "+dbname+ "; SELECT * FROM project p inner join institution_index inst on inst.pid =  p.id inner join investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" order by date_entered desc limit 1";
 			ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
 			try {
 				result.next();
@@ -102,10 +102,10 @@ public class upload {
 		// PI TABLE
 		Set<String> keys = PIS.keySet();
 		for(String s : keys) {
-			String delete = "DELETE FROM " + dbname +".investigator_index WHERE pid= " + s;
+			String delete = "use fsriotemp; DELETE FROM  investigator_index WHERE pid= " + s;
 			Set<String> values = (Set<String>) PIS.get(s);
 			for (String s2: values) {
-				String insertQuery = "use "+dbname+ "; INSERT INTO " + dbname + ".investigator_index (pid, inv_id)"
+				String insertQuery = "use "+dbname+ "; INSERT INTO  investigator_index (pid, inv_id)"
 						+ " VALUES (?, ?);";
 				try {
 					PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
@@ -125,10 +125,10 @@ public class upload {
 		//INSTITUTION TABLE
 		keys = INSTITUTIONS.keySet();
 		for(String s : keys) {
-			String delete = "DELETE FROM " + dbname +".institution_index WHERE pid= " + s;
+			String delete = "use fsriotemp; DELETE FROM  institution_index WHERE pid= " + s;
 			Set<String> values = (Set<String>) INSTITUTIONS.get(s);
 			for (String s2: values) {
-				String insertQuery = "use "+dbname+ "; INSERT INTO " + dbname + ".institution_index (pid, inv_id)"
+				String insertQuery = "use "+dbname+ "; INSERT INTO  institution_index (pid, inv_id)"
 						+ " VALUES (?, ?);";
 				try {
 					PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
@@ -152,7 +152,7 @@ public class upload {
 
 	public static void insertRecord(CSVRecord record, String institution_index__inst_id, String investigator_index__inv_id, String host, String user, String passwd, String dbname) {
 		Connection conn = MysqlConnect.connection(host,user,passwd);
-		String insertQuery = "use "+dbname+ "; INSERT INTO " + dbname +".project (PROJECT_NUMBER, PROJECT_TITLE, source_url, "
+		String insertQuery = "use "+dbname+ "; INSERT INTO  project (PROJECT_NUMBER, PROJECT_TITLE, source_url, "
 				+ "PROJECT_START_DATE, PROJECT_END_DATE, PROJECT_FUNDING, PROJECT_TYPE, "
 				+ "PROJECT_KEYWORDS, PROJECT_IDENTIFIERS, PROJECT_COOPORATORS, PROJECT_ABSTRACT, "
 				+ "PROJECT_PUBLICATIONS, other_publications, PROJECT_MORE_INFO, PROJECT_OBJECTIVE,"
@@ -350,7 +350,7 @@ public class upload {
 		}
 		// Insert the new project into investigator_index
 		conn = MysqlConnect.connection(host,user,passwd);
-		insertQuery = "use "+dbname+ "; INSERT INTO " + dbname + ".institution_data (pid, inv_id)"
+		insertQuery = "use "+dbname+ "; INSERT INTO institution_data (pid, inv_id)"
 				+ " VALUES (?, ?);";
 		try {
 			PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
@@ -389,7 +389,7 @@ public class upload {
 			id = result.getString("ID");
 		}
 		catch(Exception e) {;}
-		String updateQuery = "use "+dbname+ "; Update " + dbname + ".project SET PROJECT_TITLE= ?, source_url=?, "
+		String updateQuery = "use "+dbname+ "; Update  project SET PROJECT_TITLE= ?, source_url=?, "
 				+ "PROJECT_START_DATE=?, PROJECT_END_DATE=?, PROJECT_FUNDING=?, PROJECT_TYPE=?, "
 				+ "PROJECT_KEYWORDS =?, PROJECT_IDENTIFIERS=?, PROJECT_COOPORATORS=?, PROJECT_ABSTRACT=?, "
 				+ "PROJECT_PUBLICATIONS=?, other_publications=?, PROJECT_MORE_INFO=?, PROJECT_OBJECTIVE=?,"
@@ -595,7 +595,7 @@ public class upload {
 		String finalID = "";
 		// Let's make sure this institution definitely doesn't exist:
 		// Get all institutions
-		String GetInsts = "SELECT ID, INSTITUTION_NAME FROM " + dbname + ".institution_data";
+		String GetInsts = "use fsriotemp; SELECT ID, INSTITUTION_NAME FROM  institution_data";
 		ResultSet institutes = MysqlConnect.sqlQuery(GetInsts, conn, host,user,passwd);
 		double finalRatio = 1;
 
@@ -730,7 +730,7 @@ public class upload {
 		}
 
 		conn = MysqlConnect.connection(host, user, passwd);
-		String getID = "use "+dbname+ ";  SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME = \"" +  record.get("institution_data__INSTITUTION_NAME") + "\";";
+		String getID = "use "+dbname+ ";  SELECT ID FROM institution_data WHERE INSTITUTION_NAME = \"" +  record.get("institution_data__INSTITUTION_NAME") + "\";";
 		ResultSet ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
 		try {
 			ID.next();
@@ -754,9 +754,9 @@ public class upload {
 		if (investigator_data__name.equals("")) return "-1";
 		String query = "";
 		if (!institution_index__inst_id.equalsIgnoreCase("-1"))
-			query = "use "+dbname+ "; SELECT ID, name FROM "+dbname+".investigator_data where INSTITUTION = \""+institution_index__inst_id+"\"";
+			query = "use "+dbname+ "; SELECT ID, name FROM  investigator_data where INSTITUTION = \""+institution_index__inst_id+"\"";
 		else 
-			query = "use "+dbname+ "; SELECT ID, name FROM "+dbname+".investigator_data;";
+			query = "use "+dbname+ "; SELECT ID, name FROM  investigator_data;";
 		Connection conn = MysqlConnect.connection(host,user,passwd);
 		ResultSet pis = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
 		String finalID = "";
@@ -806,7 +806,7 @@ public class upload {
 
 
 		conn = MysqlConnect.connection(host,user,passwd);
-		String insertQuery = "use "+dbname+ "; INSERT INTO "+dbname+ ".investigator_data (name, EMAIL_ADDRESS, PHONE_NUMBER, "
+		String insertQuery = "use "+dbname+ "; INSERT INTO  investigator_data (name, EMAIL_ADDRESS, PHONE_NUMBER, "
 				+ "INSTITUTION, DATE_ENTERED) VALUES (?, ?, ?, ?, ?);";
 		try {
 			PreparedStatement preparedStmt = conn.prepareStatement(insertQuery);
@@ -824,7 +824,7 @@ public class upload {
 		}
 
 		conn = MysqlConnect.connection(host,user,passwd);
-		String getID = "use "+dbname+ "; SELECT ID FROM " + dbname + ".investigator_data WHERE name = \"" +  name  
+		String getID = "use "+dbname+ "; SELECT ID FROM investigator_data WHERE name = \"" +  name  
 				+ "\" and INSTITUTION = " + INSTITUTION + ";";
 		ResultSet ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
 		try {
