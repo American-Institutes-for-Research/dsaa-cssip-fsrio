@@ -20,10 +20,10 @@ This is the maven build of the project. To install and run:
 
 
 For running upload:
-	mvn exec:java -Dexec.mainClass="com.jbt.Run" -Dexec.args="processUpload.cfg password"
+	mvn exec:java -Dexec.mainClass="com.jbt.Run" -Dexec.args="processUpload.cfg password upload"
 
 For running scraping: 
- 	mvn exec:java -Dexec.mainClass="com.jbt.Run" -Dexec.args="process.cfg password"
+ 	mvn exec:java -Dexec.mainClass="com.jbt.Run" -Dexec.args="process.cfg password scrape"
 
 Thus depending on the cfg file provided, the program automatically runs the upload or scraping script.
 
@@ -36,10 +36,10 @@ To avoid compiling, the executable jar can be used to run the program as follows
 
 
 For running upload:
-	java -jar fsrio.jar "processUpload.cfg" "password"
+	java -jar fsrio.jar "processUpload.cfg" "password" "upload"
 
 For running scraping: 
- 	java -jar fsrio.jar "process.cfg" "password"
+ 	java -jar fsrio.jar "process.cfg" "password" "scrape"
 
 ## How to open the output tab-delimited files in Excel  
 1. Open Excel, go to "Data" tab.  

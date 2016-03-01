@@ -16,6 +16,7 @@ public class Run {
 	public static void main(String[] args) throws IOException,SAXException,ParserConfigurationException,Exception {
 		Properties prop = new Properties();
 		InputStream in = new FileInputStream(new File(args[0]));
+		String option = args[2];
 		prop.load(in);
 		in.close();
 		String outfolder = prop.getProperty("OUTPUT_FOLDER");
@@ -27,7 +28,7 @@ public class Run {
 		String dbname = prop.getProperty("MYSQL_DBNAME");
 		String logfile = prop.getProperty("LOG_FILE");
 		
-		
+		if(option.equalsIgnoreCase("scrape")) {
 		String[] dataSources = {"CampdenBri","Defra","Efsa","Esrc","Fsa","Fspb","NIH","NSF","Omafra","Relu","AHDB"};
 		String[] sources = prop.getProperty("SOURCES").split(",");
 		if (sources[0].equals("all")) {
@@ -110,7 +111,21 @@ public class Run {
 			}
 			
 		}
+
+	}
+	else if(option.equalsIgnoreCase("upload"))	{
+		File folder = new File(outfolder);
+		File[] listOfFiles = folder.listFiles();
+		for (int i = 0; i < listOfFiles.length; i++) {
+      		if (listOfFiles[i].isFile())
+        		upload.main(listOfFiles[i], host, user, passwd, dbname, logfile);
+    }
 		
+	}
+	else {
+		System.out.println("The third argument must be one of upload or scrape");
+	}	
+
 		
 	}
 
