@@ -68,7 +68,7 @@ public class NIH {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String currentDateLog = dateFormat.format(current);
 
-		CSVPrinter csvout = new CSVPrinter(new FileWriter(outfolder+"NIH_"+currentStamp+".csv"), CSVFormat.EXCEL.withDelimiter(','));
+		CSVPrinter csvout = new CSVPrinter(new FileWriter(outfolder+"NIH_"+currentStamp+".csv"), CSVFormat.EXCEL.withDelimiter('\t'));
 		
 		String[] header = {"project__PROJECT_NUMBER","project__AGENCY_FULL_NAME", "agency_index__aid", 
 				"project__PROJECT_OBJECTIVE", "project__PROJECT_TITLE",

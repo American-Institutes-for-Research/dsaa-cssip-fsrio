@@ -37,7 +37,7 @@ public class upload {
 		MultiMap PIS = new MultiValueMap();
 		MultiMap INSTITUTIONS = new MultiValueMap();
 
-		Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(fileName));
+		Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().withDelimiter('\t').parse(new FileReader(fileName));
 	
 		for (CSVRecord record : records) {
 			//question for Evgeny: Is the project number ever missing?

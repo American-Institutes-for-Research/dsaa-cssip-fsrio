@@ -49,7 +49,7 @@ public class NSF {
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String currentDateLog = dateFormat.format(current);
 
-		CSVPrinter csvout = new CSVPrinter(new FileWriter(outfolder+"NSF_"+currentStamp+".csv"), CSVFormat.EXCEL.withDelimiter(','));
+		CSVPrinter csvout = new CSVPrinter(new FileWriter(outfolder+"NSF_"+currentStamp+".csv"), CSVFormat.EXCEL.withDelimiter('\t'));
 
 		String[] header = {"project__PROJECT_NUMBER", "project__PROJECT_TITLE", 
 				"project__PROJECT_OBJECTIVE", "project__PROJECT_START_DATE", "project__PROJECT_END_DATE",
