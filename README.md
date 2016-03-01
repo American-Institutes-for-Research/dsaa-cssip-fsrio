@@ -4,7 +4,6 @@ Data automation for USDA FSRIO to parse and scrape data from multiple sources fo
 Dependencies:  
 1. Maven 3.0 or higher  
 2. JDK 1.8  
-3. JRE 1.8  
 
 Before running, please ensure that the configuration files are setup properly, specifically, that the MYSQL host, database and username have been updated.  
 
