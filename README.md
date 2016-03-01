@@ -36,10 +36,10 @@ To avoid compiling, the executable jar can be used to run the program as follows
 
 
 For running upload:
-	java -jar jbt-0.0.1-SNAPSHOT-jar-with-dependencies.jar "processUpload.cfg" "password"
+	java -jar fsrio.jar "processUpload.cfg" "password"
 
 For running scraping: 
- 	java -jar jbt-0.0.1-SNAPSHOT-jar-with-dependencies.jar "process.cfg" "password"
+ 	java -jar fsrio.jar "process.cfg" "password"
 
 ## How to open the output tab-delimited files in Excel  
 1. Open Excel, go to "Data" tab.  
