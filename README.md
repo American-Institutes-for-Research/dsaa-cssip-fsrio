@@ -31,9 +31,9 @@ Thus depending on the cfg file provided, the program automatically runs the uplo
 
 ## Using prebuilt jar file
 
-To avoid compiling, the executable jar can be used to run the program as follows:
-1. Clone the directoy to your  local drive.
-2. cd into FSRIO/jbt
+To avoid compiling, the executable jar can be used to run the program as follows:  
+1. Clone the directoy to your  local drive.  
+2. cd into FSRIO/jbt  
 
 
 For running upload:
