@@ -25,7 +25,6 @@ For running upload:
 For running scraping: 
  	mvn exec:java -Dexec.mainClass="com.jbt.Run" -Dexec.args="process.cfg password scrape"
 
-Thus depending on the cfg file provided, the program automatically runs the upload or scraping script.
 
 
 ## Using prebuilt jar file
