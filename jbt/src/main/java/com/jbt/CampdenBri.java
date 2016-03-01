@@ -121,7 +121,11 @@ public class CampdenBri {
 					project__LAST_UPDATE = currentDateLog;
 					
 					//Project title
-					project__PROJECT_TITLE = projElem.previousElementSibling().text();
+					try {
+						project__PROJECT_TITLE = projElem.previousElementSibling().text();
+					} catch (Exception eee) {
+						project__PROJECT_TITLE = "";
+					}
 					
 					//Project number and date
 					List<String> matches = new ArrayList<String>();
