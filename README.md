@@ -5,7 +5,7 @@ Dependencies:
 1. Maven 3.0 or higher  
 2. JDK 1.8  
 
-Before running, please ensure that the configuration files are setup properly, specifically, that the MYSQL host, database and username have been updated.  
+Before running, please ensure that the configuration files (process.cfg and processUpload.cfg) are set up properly, specifically that the MySQL host, database and username, output and log folders have been specified correctly.  
 
 There are default values for all other options, but ensure that the values are what you want them to be.  
 
@@ -41,9 +41,9 @@ For running upload:
 For running scraping: 
  	java -jar jbt-0.0.1-SNAPSHOT-jar-with-dependencies.jar "process.cfg" "password"
 
-How to open the tsv files generated in Excel:  
-1. Open Excel, go to Data tab.  
-2. Click From Text.  
+## How to open the output tab-delimited files in Excel:  
+1. Open Excel, go to "Data" tab.  
+2. Click "From Text".  
 3. Choose the appropriate file.  
 4. Click next, then select tab as the delimiter.
 5. Click Finish.
