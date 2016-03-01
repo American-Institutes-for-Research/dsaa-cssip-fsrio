@@ -42,7 +42,7 @@ For running upload:
 For running scraping: 
  	java -jar jbt-0.0.1-SNAPSHOT-jar-with-dependencies.jar "processUpload.cfg password"
 
-How to open the tsv files generated in Excel:
+How to open the tsv files generated in Excel:  
 1. Open Excel, go to Data tab.  
 2. Click From Text.  
 3. Choose the appropriate file.  
