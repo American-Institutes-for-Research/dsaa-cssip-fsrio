@@ -20,7 +20,7 @@ public class Run {
 		prop.load(in);
 		in.close();
 		String outfolder = prop.getProperty("OUTPUT_FOLDER");
-		
+		System.out.println(outfolder);
 		//Get MySQL credentials
 		String host = prop.getProperty("MYSQL_HOST");
 		String user = prop.getProperty("MYSQL_USERNAME");
