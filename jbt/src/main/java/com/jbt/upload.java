@@ -28,6 +28,7 @@ public class upload {
 	static String currentStamp = dateFormatCurrent.format(current);
 
 	public static void main(File Filename, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+		System.out.println("Working on"+Filename);
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
 		uploadRecords(Filename, host, user, passwd, dbname);
@@ -71,7 +72,11 @@ public class upload {
 			String query = "SELECT * FROM "+dbname+".project p inner join "
 					+ dbname+".institution_index inst on inst.pid =  p.id inner join "
 							+ dbname+".investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" order by date_entered desc limit 1";
-			ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			ResultSet result = null;
+			try{
+				result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			}
+			catch(Exception e) {System.err.println(query);}
 			try {
 				result.next();
 				String t = result.getString("PROJECT_NUMBER");
@@ -352,12 +357,13 @@ public class upload {
 		}
 		// Insert the new project into investigator_index
 		conn = MysqlConnect.connection(host,user,passwd);
-		insertQuery = "INSERT INTO "+dbname+".institution_data (pid, inv_id)"
+		insertQuery = "INSERT INTO "+dbname+".investigator_index (pid, inv_id)"
 				+ " VALUES (?, ?);";
 		try {
 			PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
 			preparedStmt2.setString(1, PROJECT_NUMBER);
-			preparedStmt2.setString(2, investigator_index__inv_id);	
+			preparedStmt2.setString(2, investigator_index__inv_id);
+
 			preparedStmt2.execute();
 		}
 		catch (Exception e) {;}
@@ -368,12 +374,13 @@ public class upload {
 
 		// Insert the new project into institution_index
 		conn = MysqlConnect.connection(host,user,passwd);
-		insertQuery = "INSERT INTO " + dbname + ".investigator_index (pid, inv_id)"
+		insertQuery = "INSERT INTO " + dbname + ".institution_index (pid, inst_id)"
 				+ " VALUES (?, ?);";
 		try {
 			PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
 			preparedStmt2.setString(1, PROJECT_NUMBER);
 			preparedStmt2.setString(2, institution_index__inst_id);	
+
 			preparedStmt2.execute();
 
 		}
@@ -574,6 +581,7 @@ public class upload {
 			preparedStmt.setString(20, archive);
 			preparedStmt.setString(21, LAST_UPDATE);	
 			preparedStmt.setString(22, LAST_UPDATE_BY);
+
 			preparedStmt.execute();
 		}
 		catch (Exception e) {;}		
@@ -597,8 +605,13 @@ public class upload {
 		String finalID = "";
 		// Let's make sure this institution definitely doesn't exist:
 		// Get all institutions
+		ResultSet institutes = null;
 		String GetInsts = "SELECT ID, INSTITUTION_NAME FROM  "+dbname+".institution_data";
-		ResultSet institutes = MysqlConnect.sqlQuery(GetInsts, conn, host,user,passwd);
+		try {
+			institutes = MysqlConnect.sqlQuery(GetInsts, conn, host,user,passwd);
+
+		}
+		catch (Exception e) {System.err.println(GetInsts);}
 		double finalRatio = 1;
 
 		String finalInst = "";
@@ -724,6 +737,7 @@ public class upload {
 			preparedStmt.setString(9, DATE_ENTERED);
 			preparedStmt.setString(10, COMMENTS);	
 			preparedStmt.setString(11, INSTITUTION_URL);	
+
 			preparedStmt.execute();
 		}
 		catch (Exception e) {;}		
@@ -733,7 +747,14 @@ public class upload {
 
 		conn = MysqlConnect.connection(host, user, passwd);
 		String getID = " SELECT ID FROM "+dbname+".institution_data WHERE INSTITUTION_NAME = \"" +  record.get("institution_data__INSTITUTION_NAME") + "\";";
-		ResultSet ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
+		ResultSet ID =null;
+				
+		try {
+			ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
+		}
+		catch(Exception e) {
+			System.err.println(getID);
+		}
 		try {
 			ID.next();
 			finalID = ID.getString(1);
@@ -760,7 +781,11 @@ public class upload {
 		else 
 			query = "SELECT ID, name FROM  "+dbname+".investigator_data;";
 		Connection conn = MysqlConnect.connection(host,user,passwd);
-		ResultSet pis = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+		ResultSet pis = null;
+		try {
+			pis = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+		}
+		catch(Exception e) {System.err.println(query);}
 		String finalID = "";
 		double finalRatio = 3;
 
@@ -794,6 +819,7 @@ public class upload {
 		String EMAIL_ADDRESS = "";
 		String PHONE_NUMBER = "";
 		String INSTITUTION = institution_index__inst_id;
+		if (INSTITUTION.equalsIgnoreCase("")) INSTITUTION="0"; 
 		String DATE_ENTERED = currentStamp;
 
 		try {
@@ -817,6 +843,7 @@ public class upload {
 			preparedStmt.setString(3, PHONE_NUMBER);
 			preparedStmt.setString(4, INSTITUTION);
 			preparedStmt.setString(5, DATE_ENTERED);
+
 			preparedStmt.execute();
 			
 		}
@@ -828,7 +855,13 @@ public class upload {
 		conn = MysqlConnect.connection(host,user,passwd);
 		String getID = "SELECT ID FROM "+dbname+ ".investigator_data WHERE name = \"" +  name  
 				+ "\" and INSTITUTION = " + INSTITUTION + ";";
-		ResultSet ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
+		ResultSet ID =null;
+		try {
+			ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
+
+		}
+		catch (Exception e) {System.err.println(getID);}
+		
 		try {
 			ID.next();
 			finalID = ID.getString(1);

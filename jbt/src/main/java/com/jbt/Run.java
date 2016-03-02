@@ -28,7 +28,7 @@ public class Run {
 		String dbname = prop.getProperty("MYSQL_DBNAME");
 		String logfile = prop.getProperty("LOG_FILE");
 		
-		if(option.equalsIgnoreCase(args[0])) {
+		if(option.equalsIgnoreCase("scrape")) {
 		String[] dataSources = {"CampdenBri","Defra","Efsa","Esrc","Fsa","Fspb","NIH","NSF","Omafra","Relu","AHDB"};
 		String[] sources = prop.getProperty("SOURCES").split(",");
 		if (sources[0].equals("all")) {

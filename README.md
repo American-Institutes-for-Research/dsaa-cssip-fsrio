@@ -5,7 +5,7 @@ Dependencies:
 1. Maven 3.0 or higher  
 2. JDK 1.8  
 
-Before running, please ensure that the configuration files (process.cfg and processUpload.cfg) are set up properly, specifically that the MySQL host, database and username, output and log folders have been specified correctly.  
+Before running, please ensure that the configuration file (process.cfg) is set up properly, specifically that the MySQL host, database and username, output and log folders have been specified correctly.  
 
 There are default values for all other options, but ensure that the values are what you want them to be.  
 
@@ -20,7 +20,7 @@ This is the maven build of the project. To install and run:
 
 
 For running upload:
-	mvn exec:java -Dexec.mainClass="com.jbt.Run" -Dexec.args="processUpload.cfg password upload"
+	mvn exec:java -Dexec.mainClass="com.jbt.Run" -Dexec.args="process.cfg password upload"
 
 For running scraping: 
  	mvn exec:java -Dexec.mainClass="com.jbt.Run" -Dexec.args="process.cfg password scrape"
@@ -39,7 +39,7 @@ To avoid compiling, the executable jar can be used to run the program as follows
 
 
 For running upload:
-	java -jar fsrio.jar "processUpload.cfg" "password" "upload"
+	java -jar fsrio.jar "process.cfg" "password" "upload"
 
 For running scraping: 
  	java -jar fsrio.jar "process.cfg" "password" "scrape"
