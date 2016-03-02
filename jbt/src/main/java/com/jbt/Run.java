@@ -14,21 +14,21 @@ import java.util.Arrays;
 public class Run {
 	
 	public static void main(String[] args) throws IOException,SAXException,ParserConfigurationException,Exception {
+
 		Properties prop = new Properties();
-		InputStream in = new FileInputStream(new File(args[0]));
+		InputStream in = new FileInputStream(new File(args[0])); 
 		String option = args[2];
 		prop.load(in);
 		in.close();
 		String outfolder = prop.getProperty("OUTPUT_FOLDER");
-		System.out.println(outfolder);
 		//Get MySQL credentials
 		String host = prop.getProperty("MYSQL_HOST");
 		String user = prop.getProperty("MYSQL_USERNAME");
-		String passwd = args[1];
+		String passwd =  args[1];
 		String dbname = prop.getProperty("MYSQL_DBNAME");
 		String logfile = prop.getProperty("LOG_FILE");
 		
-		if(option.equalsIgnoreCase("scrape")) {
+		if(option.equalsIgnoreCase(args[0])) {
 		String[] dataSources = {"CampdenBri","Defra","Efsa","Esrc","Fsa","Fspb","NIH","NSF","Omafra","Relu","AHDB"};
 		String[] sources = prop.getProperty("SOURCES").split(",");
 		if (sources[0].equals("all")) {
