@@ -41,8 +41,14 @@ public class upload {
 		Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().withDelimiter('\t').parse(new FileReader(fileName));
 	
 		for (CSVRecord record : records) {
+			String project__PROJECT_NUMBER = "";
 			//question for Evgeny: Is the project number ever missing?
-			String project__PROJECT_NUMBER = record.get("project__PROJECT_NUMBER");
+			try {
+				project__PROJECT_NUMBER = record.get("project__PROJECT_NUMBER");
+			}
+			catch (Exception e) {
+				;
+			}
 			String institution_index__inst_id = "";
 			String investigator_index__inv_id= "";
 			String investigator_data__name ="";
@@ -84,16 +90,19 @@ public class upload {
 				String investigator = result.getString("inv_id");
 				String endDate = result.getString("END_DATE");
 				// AT least one of these things should have real new value, before we update
-				if(!investigator_index__inv_id.equals("-1") || !institution_index__inst_id.equals("-1")) {
-					if (!investigator.equalsIgnoreCase(investigator_index__inv_id) || !inst.equalsIgnoreCase(institution_index__inst_id) || !endDate.equalsIgnoreCase(end))  {
-						// Add the new PI and Inst information to   a dictionary, but only if it is not -1. 
-						if (!investigator_index__inv_id.equals("-1"))
-							PIS.put(result.getString("PROJECT_NUMBER"), investigator_index__inv_id);
-						if (!institution_index__inst_id.equals("-1"))
-							INSTITUTIONS.put(result.getString("PROJECT_NUMBER"), institution_index__inst_id);
-						updateRecord(record, result, host, user, passwd, dbname);
-						}
+				if (!result.getString("PROJECT_NUMBER").equals("")) {
+					if(!investigator_index__inv_id.equals("-1") || !institution_index__inst_id.equals("-1")) {
+						if (!investigator.equalsIgnoreCase(investigator_index__inv_id) || !inst.equalsIgnoreCase(institution_index__inst_id) || !endDate.equalsIgnoreCase(end))  {
+							// Add the new PI and Inst information to   a dictionary, but only if it is not -1. 
+							if (!investigator_index__inv_id.equals("-1"))
+								PIS.put(result.getString("PROJECT_NUMBER"), investigator_index__inv_id);
+							if (!institution_index__inst_id.equals("-1"))
+								INSTITUTIONS.put(result.getString("PROJECT_NUMBER"), institution_index__inst_id);
+							updateRecord(record, result, host, user, passwd, dbname);
+							}
+					}
 				}
+	
 				
 				}
 			catch (Exception ex) {
@@ -773,7 +782,11 @@ public class upload {
 
 
 	public static String getPIid(CSVRecord record, String institution_index__inst_id, String host, String user, String passwd, String dbname) {
-		String investigator_data__name = record.get("investigator_data__name");
+		String investigator_data__name = "";
+		try {
+			investigator_data__name = record.get("investigator_data__name");
+		}
+		catch(Exception e) {;}
 		if (investigator_data__name.equals("")) return "-1";
 		String query = "";
 		if (!institution_index__inst_id.equalsIgnoreCase("-1"))
