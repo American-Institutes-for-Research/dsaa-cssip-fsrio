@@ -40,7 +40,6 @@ public class upload {
 		Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().withDelimiter('\t').parse(new FileReader(fileName));
 	
 		for (CSVRecord record : records) {
-			System.out.println(record);
 			//question for Evgeny: Is the project number ever missing?
 			String project__PROJECT_NUMBER = record.get("project__PROJECT_NUMBER");
 			String institution_index__inst_id = "";
