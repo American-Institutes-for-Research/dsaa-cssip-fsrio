@@ -127,7 +127,9 @@ public class upload {
 		Set<String> keys = PIS.keySet();
 		for(String s : keys) {
 			String delete = "DELETE FROM  "+dbname +".investigator_index WHERE pid= " + s;
-			ArrayList<String> list = (ArrayList<String>)PIS.get(s);
+			ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
+			if(list == null) continue;
+			if(list.isEmpty()) continue;
 			Set<String> values = new HashSet<String>(list);  
 			for (String s2: values) {
 				String insertQuery = "INSERT INTO  "+dbname+".investigator_index (pid, inv_id)"
@@ -151,7 +153,9 @@ public class upload {
 		keys = INSTITUTIONS.keySet();
 		for(String s : keys) {
 			String delete = "DELETE FROM  "+dbname+".institution_index WHERE pid= " + s;
-			ArrayList<String> list = (ArrayList<String>)PIS.get(s);
+			ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
+			if(list == null) continue;
+			if(list.isEmpty()) continue;
 			Set<String> values = new HashSet<String>(list);  
 			for (String s2: values) {
 				String insertQuery = "INSERT INTO  "+dbname+".institution_index (pid, inv_id)"
