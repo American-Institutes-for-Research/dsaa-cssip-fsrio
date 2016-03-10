@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,13 +23,15 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.StringUtils;
 
+import net.sf.junidecode.Junidecode;
+
 public class upload {
 	static Date current = new Date();
 	static DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 	static String currentStamp = dateFormatCurrent.format(current);
 
 	public static void main(File Filename, String host, String user, String passwd, String dbname, String logfile) throws IOException {
-		System.out.println("Working on"+Filename);
+		System.out.println("Working on "+Filename);
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
 		uploadRecords(Filename, host, user, passwd, dbname);
@@ -75,8 +78,8 @@ public class upload {
 			investigator_index__inv_id = getPIid(record, institution_index__inst_id, host, user, passwd, dbname);
 			
 			//Project number	
-			String query = "SELECT * FROM "+dbname+".project p inner join "
-					+ dbname+".institution_index inst on inst.pid =  p.id inner join "
+			String query = "SELECT * FROM "+dbname+".project p left join "
+					+ dbname+".institution_index inst on inst.pid =  p.id left join "
 							+ dbname+".investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" order by date_entered desc limit 1";
 			ResultSet result = null;
 			try{
@@ -85,19 +88,24 @@ public class upload {
 			catch(Exception e) {System.err.println(query);}
 			try {
 				result.next();
-				String t = result.getString("PROJECT_NUMBER");
+				String t = result.getString("ID");
 				String inst = result.getString("inst_id");
 				String investigator = result.getString("inv_id");
-				String endDate = result.getString("END_DATE");
+				String endDate = result.getString("PROJECT_END_DATE");
+				
+				if (inst == null) inst = ""; 
+				if (investigator == null) investigator = "";
+				if (endDate == null) endDate = "";
+				if(t == null) t = "";
 				// AT least one of these things should have real new value, before we update
-				if (!result.getString("PROJECT_NUMBER").equals("")) {
+				if (!t.isEmpty()) {
 					if(!investigator_index__inv_id.equals("-1") || !institution_index__inst_id.equals("-1")) {
-						if (!investigator.equalsIgnoreCase(investigator_index__inv_id) || !inst.equalsIgnoreCase(institution_index__inst_id) || !endDate.equalsIgnoreCase(end))  {
+					if (!investigator.equalsIgnoreCase(investigator_index__inv_id) || !inst.equalsIgnoreCase(institution_index__inst_id) || !endDate.equalsIgnoreCase(end))  {
 							// Add the new PI and Inst information to   a dictionary, but only if it is not -1. 
 							if (!investigator_index__inv_id.equals("-1"))
-								PIS.put(result.getString("PROJECT_NUMBER"), investigator_index__inv_id);
+								PIS.put(t, investigator_index__inv_id);
 							if (!institution_index__inst_id.equals("-1"))
-								INSTITUTIONS.put(result.getString("PROJECT_NUMBER"), institution_index__inst_id);
+								INSTITUTIONS.put(t, institution_index__inst_id);
 							updateRecord(record, result, host, user, passwd, dbname);
 							}
 					}
@@ -118,8 +126,9 @@ public class upload {
 		// PI TABLE
 		Set<String> keys = PIS.keySet();
 		for(String s : keys) {
-			String delete = "use fsriotemp; DELETE FROM  investigator_index WHERE pid= " + s;
-			Set<String> values = (Set<String>) PIS.get(s);
+			String delete = "DELETE FROM  "+dbname +".investigator_index WHERE pid= " + s;
+			ArrayList<String> list = (ArrayList<String>)PIS.get(s);
+			Set<String> values = new HashSet<String>(list);  
 			for (String s2: values) {
 				String insertQuery = "INSERT INTO  "+dbname+".investigator_index (pid, inv_id)"
 						+ " VALUES (?, ?);";
@@ -141,8 +150,9 @@ public class upload {
 		//INSTITUTION TABLE
 		keys = INSTITUTIONS.keySet();
 		for(String s : keys) {
-			String delete = "use fsriotemp; DELETE FROM  institution_index WHERE pid= " + s;
-			Set<String> values = (Set<String>) INSTITUTIONS.get(s);
+			String delete = "DELETE FROM  "+dbname+".institution_index WHERE pid= " + s;
+			ArrayList<String> list = (ArrayList<String>)PIS.get(s);
+			Set<String> values = new HashSet<String>(list);  
 			for (String s2: values) {
 				String insertQuery = "INSERT INTO  "+dbname+".institution_index (pid, inv_id)"
 						+ " VALUES (?, ?);";
@@ -175,7 +185,7 @@ public class upload {
 				+ "PROJECT_ACCESSION_NUMBER, ACTIVITY_STATUS, DATE_ENTERED, COMMENTS, AUTO_INDEX_QA,"
 				+ "archive,LAST_UPDATE,  LAST_UPDATE_BY) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 		String PROJECT_NUMBER = null;
-		String PROJECT_TITLE = null;
+		String PROJECT_TITLE = "";
 		String source_url = "";
 		String PROJECT_START_DATE = "";
 		String PROJECT_END_DATE = "";	
@@ -184,7 +194,7 @@ public class upload {
 		String PROJECT_KEYWORDS = null;
 		String PROJECT_IDENTIFIERS = null;
 		String  PROJECT_COOPORATORS = null;	
-		String  PROJECT_ABSTRACT = null;	
+		String  PROJECT_ABSTRACT = "";	
 		String  PROJECT_PUBLICATIONS = null;	
 		String  other_publications = "";
 		String  PROJECT_MORE_INFO = null;
@@ -196,7 +206,7 @@ public class upload {
 		String  archive = "1";
 		String  LAST_UPDATE = null;	
 		String  LAST_UPDATE_BY = "air";
-		String PROJECT_OBJECTIVE= null;
+		String PROJECT_OBJECTIVE= "";
 		try {
 			PROJECT_NUMBER = record.get("project__PROJECT_NUMBER");
 		}
@@ -205,7 +215,6 @@ public class upload {
 			PROJECT_TITLE = record.get("project__PROJECT_TITLE");
 		}
 		catch (Exception e) {;}
-
 
 		try {
 			source_url = record.get("project__source_url");
@@ -335,7 +344,7 @@ public class upload {
 		try {
 			PreparedStatement preparedStmt = conn.prepareStatement(insertQuery);
 			preparedStmt.setString(1, PROJECT_NUMBER);
-			preparedStmt.setString(2, PROJECT_TITLE);
+			preparedStmt.setString(2, Junidecode.unidecode(PROJECT_TITLE));
 			preparedStmt.setString(3, source_url);
 			preparedStmt.setString(4, PROJECT_START_DATE);
 			preparedStmt.setString(5, PROJECT_END_DATE);	
@@ -344,11 +353,11 @@ public class upload {
 			preparedStmt.setString(8, PROJECT_KEYWORDS);
 			preparedStmt.setString(9, PROJECT_IDENTIFIERS);
 			preparedStmt.setString(10, PROJECT_COOPORATORS);	
-			preparedStmt.setString(11, PROJECT_ABSTRACT);	
+			preparedStmt.setString(11, Junidecode.unidecode(PROJECT_ABSTRACT));	
 			preparedStmt.setString(12, PROJECT_PUBLICATIONS);	
 			preparedStmt.setString(13, other_publications);
 			preparedStmt.setString(14, PROJECT_MORE_INFO);
-			preparedStmt.setString(15, PROJECT_OBJECTIVE);
+			preparedStmt.setString(15,  Junidecode.unidecode(PROJECT_OBJECTIVE));
 			preparedStmt.setString(16, PROJECT_ACCESSION_NUMBER);
 			preparedStmt.setString(17, ACTIVITY_STATUS);
 			preparedStmt.setString(18, DATE_ENTERED);	
@@ -358,46 +367,65 @@ public class upload {
 			preparedStmt.setString(22, LAST_UPDATE);	
 			preparedStmt.setString(23, LAST_UPDATE_BY);
 			preparedStmt.execute();
-
+			
 		}
-		catch (Exception e) {;}		
+		catch (Exception e) {System.err.println(e);}		
 		finally {
 			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 		}
 		// Insert the new project into investigator_index
-		conn = MysqlConnect.connection(host,user,passwd);
-		insertQuery = "INSERT INTO "+dbname+".investigator_index (pid, inv_id)"
-				+ " VALUES (?, ?);";
-		try {
-			PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
-			preparedStmt2.setString(1, PROJECT_NUMBER);
-			preparedStmt2.setString(2, investigator_index__inv_id);
-
-			preparedStmt2.execute();
-		}
-		catch (Exception e) {;}
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
-
-
-		// Insert the new project into institution_index
-		conn = MysqlConnect.connection(host,user,passwd);
-		insertQuery = "INSERT INTO " + dbname + ".institution_index (pid, inst_id)"
-				+ " VALUES (?, ?);";
-		try {
-			PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
-			preparedStmt2.setString(1, PROJECT_NUMBER);
-			preparedStmt2.setString(2, institution_index__inst_id);	
-
-			preparedStmt2.execute();
-
-		}
-		catch (Exception e) {;}
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
 		
+		
+		
+		conn = MysqlConnect.connection(host,user,passwd);
+		// Get the ID for the project just inserted
+		String query = "SELECT ID from "+dbname+".project order by ID desc limit 1";
+		ResultSet result = null;
+		String ID = "";
+		try{
+			result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+		}
+		catch(Exception e) {System.err.println(query);}
+		try {
+			result.next();
+			ID = result.getString("ID");
+		}
+		catch(Exception e) {;}
+		if (!investigator_index__inv_id.equals("-1")) {
+			insertQuery = "INSERT INTO "+dbname+".investigator_index (pid, inv_id)"
+					+ " VALUES (?, ?);";
+			try {
+				PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
+				preparedStmt2.setString(1, ID);
+				preparedStmt2.setString(2, investigator_index__inv_id);
+				preparedStmt2.execute();
+			}
+			catch (Exception e) {;}
+			finally {
+				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
+			}
+		}
+		if (!institution_index__inst_id.equals("-1")) {
+			// Insert the new project into institution_index
+			conn = MysqlConnect.connection(host,user,passwd);
+			insertQuery = "INSERT INTO " + dbname + ".institution_index (pid, inst_id)"
+					+ " VALUES (?, ?);";
+			try {
+				PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
+				preparedStmt2.setString(1, ID);
+				preparedStmt2.setString(2, institution_index__inst_id);	
+				preparedStmt2.execute();
+
+			}
+			catch (Exception e) {;}
+			finally {
+				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
+			}
+
+		}
+
+
+				
 	}
 
 	public static void updateRecord(CSVRecord record, ResultSet result,  String host, String user, String passwd, String dbname) {
