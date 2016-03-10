@@ -386,12 +386,21 @@ public class upload {
 			result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
 		}
 		catch(Exception e) {System.err.println(query);}
+		
+
 		try {
 			result.next();
 			ID = result.getString("ID");
 		}
-		catch(Exception e) {;}
+		catch(Exception e) {;}		
+		
+		finally {
+			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
+		}
+
+		
 		if (!investigator_index__inv_id.equals("-1")) {
+			conn = MysqlConnect.connection(host, user, passwd);
 			insertQuery = "INSERT INTO "+dbname+".investigator_index (pid, inv_id)"
 					+ " VALUES (?, ?);";
 			try {
