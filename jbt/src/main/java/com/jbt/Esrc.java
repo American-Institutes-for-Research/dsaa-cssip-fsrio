@@ -192,6 +192,8 @@ public class Esrc {
 			csvout.writeNext(output);
 			
 		}
+		csvout.close();
+		webClient.close();
 	}
 
 }
