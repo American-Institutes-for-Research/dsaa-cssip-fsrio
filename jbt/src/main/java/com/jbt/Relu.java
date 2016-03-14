@@ -256,7 +256,7 @@ public class Relu {
 				}
 				catch (Exception eee) {
 					//Log the link and error
-					System.out.println("It is likely that the website is not working at the moment. Please refer to the error log file for any additional details.")
+					System.out.println("It is likely that the website is not working at the moment. Please refer to the error log file for any additional details.");
 					try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(logfile, true)))) {
 						StringWriter errors = new StringWriter();
 						eee.printStackTrace(new PrintWriter(errors));
