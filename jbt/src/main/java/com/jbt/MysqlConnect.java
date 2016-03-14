@@ -28,7 +28,7 @@ public class MysqlConnect {
                 //System.out.println("SQLException: " + ex.getMessage());
                 //System.out.println("SQLState: " + ex.getSQLState());
                 //System.out.println("VendorError: " + ex.getErrorCode());
-                System.out.println("SQL Exception: Please contact NAL IT to handle this error. This means the Java database connection driver has not started. Details can be found in the error log file.");
+                System.out.println("SQL Exception: Please contact NAL IT to handle this error. This means the Java database connection driver has not started. Details can be found below.");
             }
         }
         catch (Exception ex) {
@@ -51,7 +51,7 @@ public class MysqlConnect {
 		    //System.out.println("SQLException: " + ex.getMessage());
 		    //System.out.println("SQLState: " + ex.getSQLState());
 		    //System.out.println("VendorError: " + ex.getErrorCode());
-		    System.out.println("SQL Exception: Please contact NAL IT to handle this error. It means that the database connection has not been established properly. Additional information is in the error log file.");
+		    System.out.println("SQL Exception: Please contact NAL IT to handle this error. It means that the database connection has not been established properly. Additional information is below.");
 		}
 		
 		return rs;
