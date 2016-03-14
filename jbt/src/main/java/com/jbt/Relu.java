@@ -79,8 +79,7 @@ public class Relu {
             	
             	HtmlPage nextPage = webClient.getPage(projLink.attr("href"));
 				Document finaldoc = Jsoup.parse(nextPage.asXml());
-				System.out.println(projLink.attr("href"));
-                
+				
 				//Declare needed strings
 				String project__PROJECT_NUMBER = "";
 				String project__PROJECT_TITLE = "";
@@ -186,7 +185,6 @@ public class Relu {
 					finally {
 						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 					}
-					System.out.println(piInfo);
 					//There can be several PIs - so, iterate through all and create separate rows for each
 					for (String piOne : piInfo.split(" and ")) {
 						piLastName = piOne.split(" ")[piOne.split(" ").length-1];
@@ -258,13 +256,13 @@ public class Relu {
 				}
 				catch (Exception eee) {
 					//Log the link and error
-					
+					System.out.println("It is likely that the website is not working at the moment. Please refer to the error log file for any additional details.")
 					try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(logfile, true)))) {
 						StringWriter errors = new StringWriter();
 						eee.printStackTrace(new PrintWriter(errors));
 						out.println(currentDateLog
 					    			+"   "
-					    			+"Perhaps the link is broken or does not exist, e.g. Page Not Found - "+projLink.attr("href")+" ."
+					    			+"Perhaps the link is broken or does not exist, e.g. Page Not Found. The website can be broken altogether because it happens on RELU - "+projLink.attr("href")+" ."
 					    			+" Here is some help with traceback:"
 					    			+errors.toString());
 					}catch (IOException e) {
