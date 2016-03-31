@@ -31,20 +31,20 @@ public class CampdenBri {
 	
 	
 	public static String main(String outfolder, String[] links, String[] links2, String host, String user, String passwd, String dbname) throws IOException {
-		
+		Connection conn = MysqlConnect.connection(host,user,passwd);
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
 		
-		CampdenBri.scrapeV2(links,outfolder,host,user,passwd,dbname);
+		CampdenBri.scrapeV2(links,outfolder,conn,dbname);
 		
 		/* These links2 are not part of current FSRIO approach but perhaps Campden BRI changed their website
 		and we can benefit from additional project info */
-		CampdenBri.scrapeV1(links2,outfolder,host,user,passwd,dbname);
-		
+		CampdenBri.scrapeV1(links2,outfolder,conn,dbname);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 		return "CampdenBRI";
 		
 	}
-	public static void scrapeV1(String[] links, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
+	public static void scrapeV1(String[] links, String outfolder, Connection conn, String dbname) throws IOException {
 		//Get current date to assign filename
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
@@ -183,15 +183,14 @@ public class CampdenBri {
 				
 				//Check PI name in MySQL DB
 				query = "SELECT * FROM "+dbname+".investigator_data where name like \""+piName+"\"";
-				Connection conn = MysqlConnect.connection(host,user,passwd);
-				ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+				ResultSet result = MysqlConnect.sqlQuery(query,conn);
 				try {
 					result.next();
 					investigator_index__inv_id = result.getInt(1);
 				}
 				catch (Exception e) {
 					query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						investigator_index__inv_id = result.getInt(1);
@@ -200,9 +199,7 @@ public class CampdenBri {
 						
 					}	
 				}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
+
 				
 				if (investigator_index__inv_id == -1) {
 					investigator_data__name = piName;
@@ -211,17 +208,14 @@ public class CampdenBri {
 					investigator_data__name = piName;
 					query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					conn = MysqlConnect.connection(host,user,passwd);
-					result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						String number = result.getString(1);
 						continue;
 					}
 					catch (Exception ex) {;}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 				}
 				//Write resultant values into CSV
 				String[] output = {project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," "),project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," "),
@@ -244,7 +238,7 @@ public class CampdenBri {
 		
 	}
 	
-	public static void scrapeV2(String[] links, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
+	public static void scrapeV2(String[] links, String outfolder, Connection conn, String dbname) throws IOException {
 		//Get current date to assign filename
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
@@ -387,15 +381,14 @@ public class CampdenBri {
 				
 				//Check PI name in MySQL DB
 				query = "SELECT * FROM "+dbname+".investigator_data where name like \""+piName+"\"";
-				Connection conn = MysqlConnect.connection(host,user,passwd);
-				ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+				ResultSet result = MysqlConnect.sqlQuery(query,conn);
 				try {
 					result.next();
 					investigator_index__inv_id = result.getInt(1);
 				}
 				catch (Exception e) {
 					query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						investigator_index__inv_id = result.getInt(1);
@@ -404,9 +397,7 @@ public class CampdenBri {
 						
 					}	
 				}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
+
 				
 				if (investigator_index__inv_id == -1) {
 					investigator_data__name = piName;
@@ -417,17 +408,14 @@ public class CampdenBri {
 					//Check if project exists in DB
 					query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					conn = MysqlConnect.connection(host,user,passwd);
-					result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						String number = result.getString(1);
 						continue;
 					}
 					catch (Exception ex) {;}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 				
 				}
 				

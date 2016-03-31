@@ -43,15 +43,16 @@ import com.opencsv.CSVWriter;
 
 public class Fspb {
 	public static String main(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
-		
+		Connection conn = MysqlConnect.connection(host,user,passwd);
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
 				
-		Fspb.scrape(url,outfolder,host,user,passwd,dbname,logfile);
+		Fspb.scrape(url,outfolder,conn,dbname,logfile);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 		return "FSPB";
 	}
 	
-	public static void scrape(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+	public static void scrape(String url, String outfolder, Connection conn, String dbname, String logfile) throws IOException {
 		//Get current date to assign filename
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
@@ -302,8 +303,7 @@ public class Fspb {
 			
 			//Check institution in MySQL DB
 			query = "SELECT * from "+dbname+".institution_data where institution_name like \""+institution_data__INSTITUTION_NAME+"\"";
-			Connection conn = MysqlConnect.connection(host,user,passwd);
-			ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			ResultSet result = MysqlConnect.sqlQuery(query,conn);
 			try {
 				result.next();
 				institution_index__inst_id = result.getInt(1);
@@ -311,20 +311,18 @@ public class Fspb {
 			catch (Exception e) {
 
 			}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
+
 			
 			//Check PI name in MySQL DB
 			query = "SELECT * FROM "+dbname+".investigator_data where name like \""+investigator_data__name+"\"";
-			conn = MysqlConnect.connection(host,user,passwd);
-			result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			
+			result = MysqlConnect.sqlQuery(query,conn);
 			try {
 				result.next();
 				investigator_index__inv_id = result.getInt(1);
 				if (institution_index__inst_id == -1) {
 					String instindex = result.getString(5);
-					ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn,host,user,passwd);
+					ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn);
 					checkInst.next();
 					String existInst = checkInst.getString(2);
 					Pattern patInst = Pattern.compile(existInst);
@@ -337,12 +335,12 @@ public class Fspb {
 			catch (Exception e) {
 				try {
 					query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					result = MysqlConnect.sqlQuery(query,conn);
 					result.next();
 					investigator_index__inv_id = result.getInt(1);
 					if (institution_index__inst_id == -1) {
 						String instindex = result.getString(5);
-						ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn,host,user,passwd);
+						ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn);
 						checkInst.next();
 						String existInst = checkInst.getString(2);
 						Pattern patInst = Pattern.compile(existInst);
@@ -356,10 +354,7 @@ public class Fspb {
 					
 				}	
 			}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
-			
+
 			if (institution_index__inst_id == -1) {
 				comment = "It is likely that the awardee institution of this project "
 						+ "does not exist in institution data. Please follow the link "
@@ -386,17 +381,14 @@ public class Fspb {
 				//Check if project exists in DB
 				query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 						+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-				conn = MysqlConnect.connection(host,user,passwd);
-				result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+				result = MysqlConnect.sqlQuery(query,conn);
 				try {
 					result.next();
 					String number = result.getString(1);
 					continue;
 				}
 				catch (Exception ex) {;}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
+
 			}
 			
 			//Write resultant values into CSV

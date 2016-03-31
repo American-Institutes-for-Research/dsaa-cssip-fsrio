@@ -36,15 +36,18 @@ import com.opencsv.CSVWriter;
 public class Fsa {
 
 	public static String main(String[] links, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
-		
+		Connection conn = MysqlConnect.connection(host,user,passwd);
+
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
 		
-		Fsa.scrape(links,outfolder,host,user,passwd,dbname,logfile);
+		Fsa.scrape(links,outfolder,conn,dbname,logfile);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
+
 		return "FSA";
 	}
 
-	public static void scrape(String[] links,String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+	public static void scrape(String[] links,String outfolder, Connection conn, String dbname, String logfile) throws IOException {
 		//Get current date to assign filename
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
@@ -157,17 +160,14 @@ public class Fsa {
 	        				//Check if project exists in DB
 	    					query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 	    							+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-	    					Connection conn = MysqlConnect.connection(host,user,passwd);
-	    					ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+	    					ResultSet result = MysqlConnect.sqlQuery(query,conn);
 	    					try {
 	    						result.next();
 	    						String number = result.getString(1);
 	    						continue;
 	    					}
 	    					catch (Exception ex) {;}
-	    					finally {
-	    						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-	    					}
+
 	    					
     						//Dates entered and updated
         					DateFormat dateFormatEntered = new SimpleDateFormat("yyyy-MM-dd");
@@ -193,8 +193,7 @@ public class Fsa {
 	        					}
 	        					//Check institution in MySQL DB
 								query = "SELECT * from "+dbname+".institution_data where institution_name like \""+institution_data__INSTITUTION_NAME+"\"";
-								conn = MysqlConnect.connection(host,user,passwd);
-								result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+								result = MysqlConnect.sqlQuery(query,conn);
 								try {
 									result.next();
 									institution_index__inst_id = result.getInt(1);
@@ -202,9 +201,7 @@ public class Fsa {
 								catch (Exception e) {
 									comment = "Institution not in the DB; please collect information manually and populate in institution_data table.";
 								}
-								finally {
-									if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-								}
+
 	        				} catch (Exception ee) {
 	        					comment = "No institution information available; please check "+ project__source_url + " to identify if any additional information can be retrieved.";
 	        				}
