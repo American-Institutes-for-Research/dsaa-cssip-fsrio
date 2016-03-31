@@ -34,13 +34,15 @@ public class Esrc {
 	public static String main(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-		
-		Esrc.scrape(url,outfolder,host,user,passwd,dbname);
+		Connection conn = MysqlConnect.connection(host,user,passwd);
+
+		Esrc.scrape(url,outfolder,conn,dbname);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 		return "ESRC";
 
 	}
 	
-	public static void scrape(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
+	public static void scrape(String url, String outfolder, Connection conn, String dbname) throws IOException {
 		//Get current date to assign filename
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
@@ -128,38 +130,31 @@ public class Esrc {
 			
 			//Check in DB whether PI exists
 			String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-			Connection conn = MysqlConnect.connection(host,user,passwd);
-			ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn,host,user,passwd);
+			ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 			try {
 				rs6.next();
 				investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
 			}
 			catch (Exception e) {
 				query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-				ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+				ResultSet result = MysqlConnect.sqlQuery(query,conn);
 				try {
 					result.next();
 					investigator_index__inv_id = result.getInt(1);
 				}
 				catch (Exception except) {;}	
 			}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
-			
+
 			//Project number check within DB	
 			query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\"";
-			conn = MysqlConnect.connection(host,user,passwd);
-			ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			ResultSet result = MysqlConnect.sqlQuery(query,conn);
 			try {
 				result.next();
 				String number = result.getString(1);
 				continue;
 			}
 			catch (Exception ex) {;}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
+
 			
 			if (investigator_index__inv_id == -1) {
 				
@@ -167,17 +162,13 @@ public class Esrc {
 				//Check if project exists in DB
 				query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 						+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-				conn = MysqlConnect.connection(host,user,passwd);
-				result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+				result = MysqlConnect.sqlQuery(query,conn);
 				try {
 					result.next();
 					String number = result.getString(1);
 					continue;
 				}
 				catch (Exception ex) {;}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
 			}
 			
 			project__LAST_UPDATE = dateFormat.format(current);

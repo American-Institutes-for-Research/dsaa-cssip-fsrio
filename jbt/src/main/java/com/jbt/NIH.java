@@ -25,10 +25,11 @@ public class NIH {
 	public static String main(String inputfolder, String inputfolder_abstracts, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
 		
 		NIH obj  =  new NIH();
-		
+		Connection conn = MysqlConnect.connection(host,user,passwd);
 		obj.abstracts(inputfolder_abstracts);
-		obj.projects(outfolder,inputfolder,host,user,passwd,dbname);
-		
+		obj.projects(outfolder,inputfolder,conn,dbname);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
+
 		return "NIH";
 	
 	}
@@ -61,7 +62,7 @@ public class NIH {
 		}
 	}
 
-	public void projects(String outfolder, String inputfolder, String host, String user, String passwd, String dbname) throws IOException {
+	public void projects(String outfolder, String inputfolder,Connection conn, String dbname) throws IOException {
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
@@ -167,8 +168,7 @@ public class NIH {
 				
 				// See if the institution ID exists, if not make it -1 to reflect we need to add.
 				String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME REGEXP \"" +  institution_data__INSTITUTION_NAME + "\";";
-				Connection conn = MysqlConnect.connection(host, user, passwd);
-				ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn,host,user,passwd);
+				ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
 				try {
 					rs.next();
 					institution_index__inst_id = Integer.parseInt(rs.getString(1));
@@ -176,16 +176,12 @@ public class NIH {
 				catch (Exception e) {
 					comment = "Please populate institution fields by exploring the institution named on the project.";
 				}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
 
 
 				// See if the country ID exists, if not make it -1 to reflect we need to add.
 				String institution_data__INSTITUTION_COUNTRY = "-1"; 
 				String GetcountryIDsql = "SELECT ID FROM " + dbname + ".countries WHERE COUNTRY_NAME = \"" +  countries__COUNTRY_NAME + "\";";
-				conn = MysqlConnect.connection(host, user, passwd);
-				ResultSet rs2 = MysqlConnect.sqlQuery(GetcountryIDsql,conn, host,user,passwd);
+				ResultSet rs2 = MysqlConnect.sqlQuery(GetcountryIDsql,conn);
 				try {
 					rs2.next();
 					institution_data__INSTITUTION_COUNTRY = rs2.getString(1);
@@ -193,24 +189,17 @@ public class NIH {
 				catch (Exception e) {
 					institution_data__INSTITUTION_COUNTRY = countries__COUNTRY_NAME;
 				}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
 
 
 				// See if the state ID exists, if not make it -1 to reflect we need to add.
 				String GetstateIDsql = "SELECT ID FROM " + dbname + ".states WHERE abbrv = \"" +  states__states_abbrv + "\";";
-				conn = MysqlConnect.connection(host, user, passwd);
-				ResultSet rs3 = MysqlConnect.sqlQuery(GetstateIDsql,conn,host,user,passwd);
+				ResultSet rs3 = MysqlConnect.sqlQuery(GetstateIDsql,conn);
 				try {
 					rs3.next();
 					institution_data__INSTITUTION_STATE = Integer.parseInt(rs3.getString(1));
 				}
 				catch (Exception e) {
 					;
-				}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 				}
 
 				// Get Investigator information
@@ -243,23 +232,19 @@ public class NIH {
 					// Let us see if we can find the investigator in the already existing data. 
 
 					String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-					conn = MysqlConnect.connection(host, user, passwd);
-					ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn,host,user,passwd);
+					ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 					try {
 						rs6.next();
 						investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
 					}
 					catch (Exception e) {
 						String query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-						ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+						ResultSet result = MysqlConnect.sqlQuery(query,conn);
 						try {
 							result.next();
 							investigator_index__inv_id = result.getInt(1);
 						}
 						catch (Exception except) {;}	
-					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 					}
 
 					if (investigator_index__inv_id == -1) {
@@ -268,22 +253,18 @@ public class NIH {
 						//Check if project exists in DB
 						String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 								+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-						conn = MysqlConnect.connection(host,user,passwd);
-						ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+						ResultSet result = MysqlConnect.sqlQuery(query,conn);
 						try {
 							result.next();
 							String number = result.getString(1);
 							continue;
 						}
 						catch (Exception ex) {;}
-						finally {
-							if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-						}
+
 					}
 
 					String GetAgencySQL = "SELECT ID FROM " + dbname + ".agency_data WHERE AGENCY_FULL_NAME LIKE \"" +  project__AGENCY_FULL_NAME + "\";";
-					conn = MysqlConnect.connection(host, user, passwd);
-					ResultSet rs7 = MysqlConnect.sqlQuery(GetAgencySQL,conn,host,user,passwd);
+					ResultSet rs7 = MysqlConnect.sqlQuery(GetAgencySQL,conn);
 					try {
 						rs7.next();
 						agency_index__aid = Integer.parseInt(rs7.getString(1));
@@ -291,9 +272,7 @@ public class NIH {
 					catch (Exception e) {
 					
 					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 
 					String[] output = {project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," "), project__AGENCY_FULL_NAME.replaceAll("[\\n\\t\\r]"," "),
 							String.valueOf(agency_index__aid),

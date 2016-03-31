@@ -40,31 +40,31 @@ public class AHDB {
 	public static void main(String outfolder, String[] links, String host, String user, String passwd, String dbname, String logfile) throws Exception {
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-		
+		Connection conn = MysqlConnect.connection(host,user,passwd);
 		for (String link : links) {
 			if (link.replace("potatoes", "").length() < link.length()) {
-				AHDB.potatoes(outfolder, link,host,user,passwd,dbname);
+				AHDB.potatoes(outfolder, link,conn, dbname);
 			}
 			if (link.replace("horticulture", "").length() < link.length()) {
-				AHDB.horticulture(outfolder, link,host,user,passwd,dbname);
+				AHDB.horticulture(outfolder, link,conn,dbname);
 			}
 			if (link.replace("dairy", "").length() < link.length()) {
-				AHDB.dairy(outfolder, link,host,user,passwd,dbname);
+				AHDB.dairy(outfolder, link,conn,dbname);
 			}
 			if (link.replace("beefandlamb", "").length() < link.length()) {
-				AHDB.meat(outfolder, link,host,user,passwd,dbname,logfile);
+				AHDB.meat(outfolder, link,conn,dbname,logfile);
 			}
 			if (link.replace("cereals", "").length() < link.length()) {
-				AHDB.cereals(outfolder, link,host,user,passwd,dbname,logfile);
+				AHDB.cereals(outfolder, link,conn,dbname,logfile);
 			}
 			if (link.replace("pork", "").length() < link.length()) {
-				AHDB.pork(outfolder,link,host,user,passwd,dbname);
+				AHDB.pork(outfolder,link,conn,dbname);
 			}
 		}
-		
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 	}
 
-	public static void potatoes(String outfolder, String url, String host, String user, String passwd, String dbname) throws Exception {
+	public static void potatoes(String outfolder, String url,Connection conn, String dbname) throws Exception {
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
@@ -154,15 +154,14 @@ public class AHDB {
 				
 				//Find investigator
 				String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-				Connection conn = MysqlConnect.connection(host,user,passwd);
-				ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn,host,user,passwd);
+				ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 				try {
 					rs6.next();
 					investigator_index__inv_id = rs6.getInt(1);
 				}
 				catch (Exception e) {
 					String query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					ResultSet result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						investigator_index__inv_id = result.getInt(1);
@@ -171,10 +170,7 @@ public class AHDB {
 						
 					}
 				}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
-				
+
 				
 				if (investigator_index__inv_id == -1) {
 
@@ -183,17 +179,14 @@ public class AHDB {
 					//Check if project exists in DB
 					String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					ResultSet result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						String number = result.getString(1);
 						continue;
 					}
 					catch (Exception ex) {;}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 				
 				}
 				project__LAST_UPDATE = dateFormat.format(current);
@@ -207,8 +200,7 @@ public class AHDB {
 					
 					// Check DB for institution
 					String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-					conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn,host,user,passwd);
+					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
 					try {
 						rs.next();
 						institution_index__inst_id = rs.getInt(1);
@@ -216,9 +208,7 @@ public class AHDB {
 					catch (Exception e) {
 						comment = "Please populate institution fields by exploring the institution named on the project.";
 					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 					
 					
 					
@@ -235,7 +225,7 @@ public class AHDB {
 		csvout.close();
 	}
 	
-	public static void horticulture(String outfolder, String url, String host, String user, String passwd, String dbname) throws Exception {
+	public static void horticulture(String outfolder, String url, Connection conn, String dbname) throws Exception {
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
@@ -353,8 +343,7 @@ public class AHDB {
 				
 				// Find institution
 				String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-				Connection conn = MysqlConnect.connection(host,user,passwd);
-				ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn,host,user,passwd);
+				ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
 				try {
 					rs.next();
 					institution_index__inst_id = rs.getInt(1);
@@ -362,21 +351,16 @@ public class AHDB {
 				catch (Exception e) {
 					comment = "Please populate institution fields by exploring the institution named on the project.";
 				}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
-
 				//Find investigator
 				String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-				conn = MysqlConnect.connection(host,user,passwd);
-				ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn,host,user,passwd);
+				ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 				try {
 					rs6.next();
 					investigator_index__inv_id = rs6.getInt(1);
 				}
 				catch (Exception e) {
 					String query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					ResultSet result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						investigator_index__inv_id = result.getInt(1);
@@ -385,9 +369,7 @@ public class AHDB {
 						
 					}	
 				}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
+
 				
 				if (investigator_index__inv_id == -1) {
 				} else {
@@ -395,17 +377,14 @@ public class AHDB {
 					//Check if project exists in DB
 					String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					ResultSet result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						String number = result.getString(1);
 						continue;
 					}
 					catch (Exception ex) {;}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 				
 				}
 
@@ -423,7 +402,7 @@ public class AHDB {
 
 	}
 
-	public static void dairy(String outfolder, String url, String host, String user, String passwd, String dbname) throws Exception {
+	public static void dairy(String outfolder, String url, Connection conn, String dbname) throws Exception {
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
@@ -529,8 +508,7 @@ public class AHDB {
 			
 			// Find institution
 			String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-			Connection conn = MysqlConnect.connection(host,user,passwd);
-			ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn,host,user,passwd);
+			ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
 			try {
 				rs.next();
 				institution_index__inst_id = rs.getInt(1);
@@ -538,24 +516,18 @@ public class AHDB {
 			catch (Exception e) {
 				comment = "Please populate institution fields by exploring the institution named on the project.";
 			}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
-			
+
 			//Check if project exists in DB
 			String query = "SELECT PROJECT_TITLE FROM "+dbname+".project where PROJECT_TITLE = \""+project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," ")+"\""
 					+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-			conn = MysqlConnect.connection(host,user,passwd);
-			ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			ResultSet result = MysqlConnect.sqlQuery(query,conn);
 			try {
 				result.next();
 				String number = result.getString(1);
 				continue;
 			}
 			catch (Exception ex) {;}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
+
 			
 			String[] output = {project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," "), 
 					project__source_url, project__PROJECT_START_DATE,
@@ -568,7 +540,7 @@ public class AHDB {
 		csvout.close();
 	}
 	
-	public static void meat(String outfolder, String url, String host, String user, String passwd, String dbname, String logfile) throws Exception {
+	public static void meat(String outfolder, String url, Connection conn, String dbname, String logfile) throws Exception {
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
@@ -692,8 +664,7 @@ public class AHDB {
 					
 					// Find institution
 					String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-					Connection conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn,host,user,passwd);
+					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
 					try {
 						rs.next();
 						institution_index__inst_id = rs.getInt(1);
@@ -701,24 +672,18 @@ public class AHDB {
 					catch (Exception e) {
 						comment = "Please populate institution fields by exploring the institution named on the project.";
 					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
-					
+
 					//Check if project exists in DB
 					String query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 							+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-					conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					ResultSet result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						String number = result.getString(1);
 						continue;
 					}
 					catch (Exception ex) {;}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 					
 					project__LAST_UPDATE = dateFormat.format(current);
 					DateFormat dateFormatEnter = new SimpleDateFormat("yyyy-MM-dd");
@@ -754,7 +719,7 @@ public class AHDB {
 		
 	}
 	
-	public static void cereals(String outfolder, String url, String host, String user, String passwd, String dbname, String logfile) throws Exception {
+	public static void cereals(String outfolder, String url, Connection conn, String dbname, String logfile) throws Exception {
 		String weed = url.replace("disease", "weed");
 		String pest = url.replace("disease", "pest");
 		String nutrient = url.replace("disease", "nutrient");
@@ -914,8 +879,7 @@ public class AHDB {
 				
 				// Find institution in DB
 				String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-				Connection conn = MysqlConnect.connection(host,user,passwd);
-				ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn,host,user,passwd);
+				ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
 				try {
 					rs.next();
 					institution_index__inst_id = rs.getInt(1);
@@ -923,22 +887,18 @@ public class AHDB {
 				catch (Exception e) {
 					comment = "Please populate institution fields by exploring the institution named on the project.";
 				}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
-				
+
 				if (!investigator_data__name.equals("")) {
 					//Find investigator
 					String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-					conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn,host,user,passwd);
+					ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 					try {
 						rs6.next();
 						investigator_index__inv_id = rs6.getInt(1);
 					}
 					catch (Exception e) {
 						String query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+lastName+", "+firstName.substring(0,1)+"\"";
-						ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+						ResultSet result = MysqlConnect.sqlQuery(query,conn);
 						try {
 							result.next();
 							investigator_index__inv_id = result.getInt(1);
@@ -952,9 +912,7 @@ public class AHDB {
 						}	
 						
 					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 				}
 				
 				if (investigator_index__inv_id == -1) {
@@ -963,17 +921,14 @@ public class AHDB {
 					//Check if project exists in DB
 					String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					ResultSet result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						String number = result.getString(1);
 						continue;
 					}
 					catch (Exception ex) {;}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 				
 				}
 				project__LAST_UPDATE = dateFormat.format(current);
@@ -994,7 +949,7 @@ public class AHDB {
 		csvout.close();
 	}
 	
-	public static void pork(String outfolder, String url, String host, String user, String passwd, String dbname) throws Exception {
+	public static void pork(String outfolder, String url, Connection conn, String dbname) throws Exception {
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
@@ -1072,8 +1027,7 @@ public class AHDB {
 			
 			// Get institution Id, if exists
 			String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-			Connection conn = MysqlConnect.connection(host,user,passwd);
-			ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn,host,user,passwd);
+			ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql, conn);
 			try {
 				rs.next();
 				institution_index__inst_id = rs.getInt(1);
@@ -1081,14 +1035,10 @@ public class AHDB {
 			catch (Exception e) {
 				comment = "Please populate institution fields by exploring the institution named on the project.";
 			}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
-			
+
 			// See if PI exists.
 			String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-			conn = MysqlConnect.connection(host,user,passwd);
-			ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn,host,user,passwd);
+			ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 			try {
 				rs6.next();
 				investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
@@ -1096,25 +1046,18 @@ public class AHDB {
 			catch (Exception e) {
 				
 			}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
-			
+
 			//Check if project exists in DB
 			String query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 					+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-			conn = MysqlConnect.connection(host,user,passwd);
-			ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			ResultSet result = MysqlConnect.sqlQuery(query,conn);
 			try {
 				result.next();
 				String number = result.getString(1);
 				continue;
 			}
 			catch (Exception ex) {;}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
-		
+
 			project__LAST_UPDATE = dateFormat.format(current);
 			DateFormat dateFormatEnter = new SimpleDateFormat("yyyy-MM-dd");
 			project__DATE_ENTERED = dateFormatEnter.format(current);

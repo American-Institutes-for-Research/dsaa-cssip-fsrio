@@ -32,13 +32,14 @@ public class Defra {
 		
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-		
-		Defra.scrape(url,outfolder,host,user,passwd,dbname);
+		Connection conn = MysqlConnect.connection(host,user,passwd);
+		Defra.scrape(url,outfolder,conn,dbname);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 		return "DEFRA";
 
 	}
 
-	public static void scrape(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
+	public static void scrape(String url, String outfolder, Connection conn, String dbname) throws IOException {
 		//Get current date to assign filename
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
@@ -129,17 +130,14 @@ public class Defra {
 			//Check if project exists in DB
 			query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 					+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-			Connection conn = MysqlConnect.connection(host,user,passwd);
-			ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			ResultSet result = MysqlConnect.sqlQuery(query,conn);
 			try {
 				result.next();
 				String number = result.getString(1);
 				continue;
 			}
 			catch (Exception ex) {;}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
+
 			
 			//Date stamp
 			project__LAST_UPDATE = dateFormat.format(current);
@@ -155,8 +153,7 @@ public class Defra {
 			
 			//Check institution in MySQL DB
 			query = "SELECT * from "+dbname+".institution_data where institution_name regexp \""+institution_data__INSTITUTION_NAME+"\"";
-			conn = MysqlConnect.connection(host,user,passwd);
-			result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			result = MysqlConnect.sqlQuery(query,conn);
 			try {
 				result.next();
 				institution_index__inst_id = result.getInt(1);
@@ -167,7 +164,7 @@ public class Defra {
 				if (matchInst.find()) {
 					//Check institution in MySQL DB (might be the one in parentheses)
 					query = "SELECT * from "+dbname+".institution_data where institution_name regexp \""+matchInst.group(1)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						institution_index__inst_id = result.getInt(1);
@@ -177,7 +174,7 @@ public class Defra {
 						//Check institution in MySQL DB (might be the one in parentheses)
 						try {
 							query = "SELECT * from "+dbname+".institution_data where institution_name regexp \""+matchInst.group(1).split(" - ")[0]+"\"";
-							result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+							result = MysqlConnect.sqlQuery(query,conn);
 							result.next();
 							institution_index__inst_id = result.getInt(1);
 						}
@@ -189,7 +186,7 @@ public class Defra {
 					//Check institution in MySQL DB (might be the one after dash)
 					try {
 						query = "SELECT * from "+dbname+".institution_data where institution_name regexp \""+institution_data__INSTITUTION_NAME.split(" - ")[1]+"\"";
-						result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+						result = MysqlConnect.sqlQuery(query,conn);
 						result.next();
 						institution_index__inst_id = result.getInt(1);
 					}
@@ -199,11 +196,7 @@ public class Defra {
 					
 				}
 			}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
-			
-			
+
 			
 			//Write resultant values into CSV
 			String[] output = {project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," "),project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," "),project__source_url,

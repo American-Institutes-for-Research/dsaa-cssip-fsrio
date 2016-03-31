@@ -29,13 +29,14 @@ public class Omafra {
 		
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-		
+		Connection conn = MysqlConnect.connection(host,user,passwd);
 		String pat = "english/research/foodsafety/\\d+";
-		Omafra.scrape(url,pat,outfolder,host,user,passwd,dbname);
+		Omafra.scrape(url,pat,outfolder,conn,dbname);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}	
 		return "OMAFRA";
 	}
 	
-	public static void scrape(String url, String pat, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
+	public static void scrape(String url, String pat, String outfolder, Connection conn, String dbname) throws IOException {
 		//Get current date to assign filename
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
@@ -112,10 +113,13 @@ public class Omafra {
 						String piFirstName = "";
 						
 						//Title
-						Elements titleElem = content.getElementsByTag("h2");
-						String title = titleElem.text();
-						project__PROJECT_NUMBER = title.split(" - ")[0];
-						project__PROJECT_TITLE = title.split(" - ")[1];
+						try {
+							Elements titleElem = content.getElementsByTag("h2");
+							String title = titleElem.text();
+							project__PROJECT_NUMBER = title.split(" - ")[0];
+							project__PROJECT_TITLE = title.split(" - ")[1];
+						}
+						catch (Exception e) {;} 
 						
 						//Agency index
 						agency_index__aid = "69";
@@ -223,8 +227,7 @@ public class Omafra {
 
 						//Check institution in MySQL DB
 						query = "SELECT * from "+dbname+".institution_data where institution_name like \""+instInfo+"\"";
-						Connection conn = MysqlConnect.connection(host,user,passwd);
-						ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+						ResultSet result = MysqlConnect.sqlQuery(query,conn);
 						try {
 							result.next();
 							institution_index__inst_id = result.getInt(1);
@@ -232,20 +235,16 @@ public class Omafra {
 						catch (Exception e) {
 							
 						}
-						finally {
-    						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-    					}
-						
+
 						//Check PI name in MySQL DB
 						query = "SELECT * FROM "+dbname+".investigator_data where name like \""+piName+"\"";
-						conn = MysqlConnect.connection(host,user,passwd);
-						result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+						result = MysqlConnect.sqlQuery(query,conn);
 						try {
 							result.next();
 							investigator_index__inv_id = result.getInt(1);
 							if (institution_index__inst_id == -1) {
 								String instindex = result.getString(5);
-								ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn,host,user,passwd);
+								ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn);
 								checkInst.next();
 								String existInst = checkInst.getString(2);
 								Pattern patInst = Pattern.compile(existInst);
@@ -258,12 +257,12 @@ public class Omafra {
 						catch (Exception e) {
 							try {
 								query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-								result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+								result = MysqlConnect.sqlQuery(query,conn);
 								result.next();
 								investigator_index__inv_id = result.getInt(1);
 								if (institution_index__inst_id == -1) {
 									String instindex = result.getString(5);
-									ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn,host,user,passwd);
+									ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn);
 									checkInst.next();
 									String existInst = checkInst.getString(2);
 									Pattern patInst = Pattern.compile(existInst);
@@ -277,9 +276,7 @@ public class Omafra {
 								
 							}	
 						}
-						finally {
-    						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-    					}
+
 						
 						if (institution_index__inst_id == -1) {
 							institution_data__INSTITUTION_NAME = instInfo;
@@ -303,17 +300,14 @@ public class Omafra {
 							//Check if project exists in DB
 							query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 									+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-							conn = MysqlConnect.connection(host,user,passwd);
-							result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+							result = MysqlConnect.sqlQuery(query,conn);
 							try {
 								result.next();
 								String number = result.getString(1);
 								continue;
 							}
 							catch (Exception ex) {;}
-							finally {
-								if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-							}
+
 						}
 						
 						//Write resultant values into CSV

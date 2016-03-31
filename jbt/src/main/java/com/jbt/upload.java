@@ -34,10 +34,13 @@ public class upload {
 		System.out.println("Working on "+Filename);
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-		uploadRecords(Filename, host, user, passwd, dbname);
+		Connection conn = MysqlConnect.connection(host,user,passwd);
+
+		uploadRecords(Filename,conn, dbname);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 	}
 
-	public static void uploadRecords(File fileName, String host, String user, String passwd, String dbname) throws IOException {
+	public static void uploadRecords(File fileName, Connection conn, String dbname) throws IOException {
 		MultiMap PIS = new MultiValueMap();
 		MultiMap INSTITUTIONS = new MultiValueMap();
 
@@ -70,12 +73,11 @@ public class upload {
 			}
 			catch(Exception e) {;} 
 
-			Connection conn = MysqlConnect.connection(host,user,passwd);
 
 			// Check which csv file we are parsing, and if it is something specific, the institutions are not required. So modify logic. 
 			//AE: So I did this in the getPiID function. If there institution_name is missing, the query gets all PIs, if not then limits to institution.
-			if (institution_index__inst_id.equals("-1"))  institution_index__inst_id = checkAddInst(record, host, user, passwd, dbname);
-			investigator_index__inv_id = getPIid(record, institution_index__inst_id, host, user, passwd, dbname);
+			if (institution_index__inst_id.equals("-1"))  institution_index__inst_id = checkAddInst(record, conn, dbname);
+			investigator_index__inv_id = getPIid(record, institution_index__inst_id, conn, dbname);
 			
 			//Project number	
 			String query = "SELECT * FROM "+dbname+".project p left join "
@@ -83,7 +85,7 @@ public class upload {
 							+ dbname+".investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" order by date_entered desc limit 1";
 			ResultSet result = null;
 			try{
-				result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+				result = MysqlConnect.sqlQuery(query,conn);
 			}
 			catch(Exception e) {System.err.println(query);}
 			try {
@@ -106,7 +108,7 @@ public class upload {
 								PIS.put(t, investigator_index__inv_id);
 							if (!institution_index__inst_id.equals("-1"))
 								INSTITUTIONS.put(t, institution_index__inst_id);
-							updateRecord(record, result, host, user, passwd, dbname);
+							updateRecord(record, result,conn, dbname);
 							}
 					}
 				}
@@ -114,15 +116,12 @@ public class upload {
 				
 				}
 			catch (Exception ex) {
-				insertRecord(record, institution_index__inst_id, investigator_index__inv_id, host, user, passwd, dbname);
+				insertRecord(record, institution_index__inst_id, investigator_index__inv_id, conn, dbname);
 			}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
+
 		}
 
 		// Now we can update the index tables with all new PI and Institution information.  
-		Connection conn = MysqlConnect.connection(host,user,passwd);
 		// PI TABLE
 		Set<String> keys = PIS.keySet();
 		for(String s : keys) {
@@ -142,9 +141,7 @@ public class upload {
 					
 				}
 				catch (Exception e) {;}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
+
 			}
 
 		}
@@ -168,20 +165,14 @@ public class upload {
 					
 				}
 				catch (Exception e) {;}
-				finally {
-					if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-				}
+
 			}
 
 		}
-		try {
-			conn.close();
-		}
-		catch(Exception e) {;}
+
 	}
 
-	public static void insertRecord(CSVRecord record, String institution_index__inst_id, String investigator_index__inv_id, String host, String user, String passwd, String dbname) {
-		Connection conn = MysqlConnect.connection(host,user,passwd);
+	public static void insertRecord(CSVRecord record, String institution_index__inst_id, String investigator_index__inv_id, Connection conn, String dbname) {
 		String insertQuery = "INSERT INTO  "+dbname+".project (PROJECT_NUMBER, PROJECT_TITLE, source_url, "
 				+ "PROJECT_START_DATE, PROJECT_END_DATE, PROJECT_FUNDING, PROJECT_TYPE, "
 				+ "PROJECT_KEYWORDS, PROJECT_IDENTIFIERS, PROJECT_COOPORATORS, PROJECT_ABSTRACT, "
@@ -374,20 +365,17 @@ public class upload {
 			
 		}
 		catch (Exception e) {System.err.println(e);}		
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
+
 		// Insert the new project into investigator_index
 		
 		
 		
-		conn = MysqlConnect.connection(host,user,passwd);
 		// Get the ID for the project just inserted
 		String query = "SELECT ID from "+dbname+".project order by ID desc limit 1";
 		ResultSet result = null;
 		String ID = "";
 		try{
-			result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			result = MysqlConnect.sqlQuery(query,conn);
 		}
 		catch(Exception e) {System.err.println(query);}
 		
@@ -398,13 +386,10 @@ public class upload {
 		}
 		catch(Exception e) {;}		
 		
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
+
 
 		
 		if (!investigator_index__inv_id.equals("-1")) {
-			conn = MysqlConnect.connection(host, user, passwd);
 			insertQuery = "INSERT INTO "+dbname+".investigator_index (pid, inv_id)"
 					+ " VALUES (?, ?);";
 			try {
@@ -414,13 +399,10 @@ public class upload {
 				preparedStmt2.execute();
 			}
 			catch (Exception e) {;}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
+
 		}
 		if (!institution_index__inst_id.equals("-1")) {
 			// Insert the new project into institution_index
-			conn = MysqlConnect.connection(host,user,passwd);
 			insertQuery = "INSERT INTO " + dbname + ".institution_index (pid, inst_id)"
 					+ " VALUES (?, ?);";
 			try {
@@ -431,9 +413,7 @@ public class upload {
 
 			}
 			catch (Exception e) {;}
-			finally {
-				if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-			}
+
 
 		}
 
@@ -441,8 +421,7 @@ public class upload {
 				
 	}
 
-	public static void updateRecord(CSVRecord record, ResultSet result,  String host, String user, String passwd, String dbname) {
-		Connection conn = MysqlConnect.connection(host,user,passwd);
+	public static void updateRecord(CSVRecord record, ResultSet result,  Connection conn, String dbname) {
 		String id = "";
 		try {
 			id = result.getString("ID");
@@ -635,30 +614,24 @@ public class upload {
 			preparedStmt.execute();
 		}
 		catch (Exception e) {;}		
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
-		try {
-			conn.close();
-		}
-		catch(Exception e) {;}
+
+
 	}
 
-	public static String checkAddInst(CSVRecord record, String host, String user, String passwd, String dbname) {
+	public static String checkAddInst(CSVRecord record, Connection conn, String dbname) {
 		String institution_data__INSTITUTION_NAME = "";
 		try {
 			institution_data__INSTITUTION_NAME = record.get("institution_data__INSTITUTION_NAME");
 		}
 		catch (Exception e) {return "-1";}
 		if (institution_data__INSTITUTION_NAME == "") return "-1";
-		Connection conn = MysqlConnect.connection(host, user, passwd);
 		String finalID = "";
 		// Let's make sure this institution definitely doesn't exist:
 		// Get all institutions
 		ResultSet institutes = null;
 		String GetInsts = "SELECT ID, INSTITUTION_NAME FROM  "+dbname+".institution_data";
 		try {
-			institutes = MysqlConnect.sqlQuery(GetInsts, conn, host,user,passwd);
+			institutes = MysqlConnect.sqlQuery(GetInsts, conn);
 
 		}
 		catch (Exception e) {System.err.println(GetInsts);}
@@ -708,10 +681,7 @@ public class upload {
 		catch (Exception e) {
 			;
 		}
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
-		conn = MysqlConnect.connection(host, user, passwd);
+
 		// Insert new record for the institute:
 		String INSTITUTION_NAME = "";
 		String INSTITUTION_DEPARTMENT = "";
@@ -791,16 +761,12 @@ public class upload {
 			preparedStmt.execute();
 		}
 		catch (Exception e) {;}		
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
 
-		conn = MysqlConnect.connection(host, user, passwd);
 		String getID = " SELECT ID FROM "+dbname+".institution_data WHERE INSTITUTION_NAME = \"" +  record.get("institution_data__INSTITUTION_NAME") + "\";";
 		ResultSet ID =null;
 				
 		try {
-			ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
+			ID = MysqlConnect.sqlQuery(getID, conn);
 		}
 		catch(Exception e) {
 			System.err.println(getID);
@@ -812,9 +778,7 @@ public class upload {
 		catch (Exception e) {
 			;
 		}
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
+
 		return finalID;
 	}
 
@@ -822,7 +786,7 @@ public class upload {
 
 
 
-	public static String getPIid(CSVRecord record, String institution_index__inst_id, String host, String user, String passwd, String dbname) {
+	public static String getPIid(CSVRecord record, String institution_index__inst_id, Connection conn, String dbname) {
 		String investigator_data__name = "";
 		try {
 			investigator_data__name = record.get("investigator_data__name");
@@ -834,10 +798,9 @@ public class upload {
 			query = "SELECT ID, name FROM  "+dbname+".investigator_data where INSTITUTION = \""+institution_index__inst_id+"\"";
 		else 
 			query = "SELECT ID, name FROM  "+dbname+".investigator_data;";
-		Connection conn = MysqlConnect.connection(host,user,passwd);
 		ResultSet pis = null;
 		try {
-			pis = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+			pis = MysqlConnect.sqlQuery(query,conn);
 		}
 		catch(Exception e) {System.err.println(query);}
 		String finalID = "";
@@ -864,9 +827,7 @@ public class upload {
 		catch (Exception e) {
 			;
 		}
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
+
 
 		// Insert new record for the PI:
 		String name = investigator_data__name;
@@ -887,7 +848,6 @@ public class upload {
 		catch(Exception e) {;}
 
 
-		conn = MysqlConnect.connection(host,user,passwd);
 		String insertQuery = "INSERT INTO  "+dbname+".investigator_data (name, EMAIL_ADDRESS, PHONE_NUMBER, "
 				+ "INSTITUTION, DATE_ENTERED) VALUES (?, ?, ?, ?, ?);";
 		try {
@@ -902,16 +862,12 @@ public class upload {
 			
 		}
 		catch (Exception e) {;}		
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-		}
 
-		conn = MysqlConnect.connection(host,user,passwd);
 		String getID = "SELECT ID FROM "+dbname+ ".investigator_data WHERE name = \"" +  name  
 				+ "\" and INSTITUTION = " + INSTITUTION + ";";
 		ResultSet ID =null;
 		try {
-			ID = MysqlConnect.sqlQuery(getID, conn, host,user,passwd);
+			ID = MysqlConnect.sqlQuery(getID, conn);
 
 		}
 		catch (Exception e) {System.err.println(getID);}
@@ -922,9 +878,6 @@ public class upload {
 		}
 		catch (Exception e) {
 			;
-		}
-		finally {
-			if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
 		}
 		return finalID;
 	}

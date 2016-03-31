@@ -31,8 +31,9 @@ import java.util.regex.Matcher;
 public class NSF {
 	
 	public static String main(String inputfolder, String outfolder, String host, String user, String passwd, String dbname) throws IOException,SAXException,ParserConfigurationException {
-		
-		scrape(outfolder,inputfolder,host,user,passwd,dbname);
+		Connection conn = MysqlConnect.connection(host,user,passwd);
+		scrape(outfolder,inputfolder,conn,dbname);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}	
 		return "NSF";
 
 	}
@@ -42,7 +43,7 @@ public class NSF {
 		return files;
 	}
 
-	public static void scrape(String outfolder, String inputfolder, String host, String user, String passwd, String dbname) throws IOException,SAXException,ParserConfigurationException {
+	public static void scrape(String outfolder, String inputfolder, Connection conn, String dbname) throws IOException,SAXException,ParserConfigurationException {
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
@@ -202,8 +203,7 @@ public class NSF {
 					// See if the institution ID exists, if not make it -1 to reflect we need to add.
 					int institution_index__inst_id = -1; 
 					String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME = \"" +  institution_data__INSTITUTION_NAME + "\";";
-					Connection conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn,host,user,passwd);
+					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
 					try {
 						rs.next();
 						institution_index__inst_id = Integer.parseInt(rs.getString(1));
@@ -211,30 +211,24 @@ public class NSF {
 					catch (Exception e) {
 
 					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 		
 					// See if the country ID exists, if not make it -1 to reflect we need to add.
 					int institution_data__INSTITUTION_COUNTRY = -1; 
 					String GetcountryIDsql = "SELECT ID FROM " + dbname + ".countries WHERE COUNTRY_NAME = \"" +  countries__COUNTRY_NAME.trim() + "\";";
-					conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet rs2 = MysqlConnect.sqlQuery(GetcountryIDsql,conn,host,user,passwd);
+					ResultSet rs2 = MysqlConnect.sqlQuery(GetcountryIDsql,conn);
 					try {
 						rs2.next();
 						institution_data__INSTITUTION_COUNTRY = Integer.parseInt(rs2.getString(1));
 					}
 					catch (Exception e) {
 					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 		
 					// See if the state ID exists, if not make it -1 to reflect we need to add.
 					int institution_data__INSTITUTION_STATE = -1; 
 					String GetstateIDsql = "SELECT ID FROM " + dbname + ".states WHERE abbrv = \"" +  states__states_abbrv + "\";";
-					conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet rs3 = MysqlConnect.sqlQuery(GetstateIDsql,conn,host,user,passwd);
+					ResultSet rs3 = MysqlConnect.sqlQuery(GetstateIDsql,conn);
 					try {
 						rs3.next();
 						institution_data__INSTITUTION_STATE = Integer.parseInt(rs3.getString(1));
@@ -242,9 +236,7 @@ public class NSF {
 					catch (Exception e) {
 						;
 					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 					// Determining project type.
 					int projecttype__ID = 999;
 					if(project_awardInstrument.toLowerCase().contains("grant")) {
@@ -253,8 +245,7 @@ public class NSF {
 					else {
 						// Checking to see if project type exists in projecttype table.
 						String GetProjectTypeIDSQL = "SELECT ID FROM " + dbname + ".projecttype WHERE NAME LIKE \"" +  project_awardInstrument + "\";";
-						conn = MysqlConnect.connection(host,user,passwd);
-						ResultSet rs4 = MysqlConnect.sqlQuery(GetstateIDsql,conn,host,user,passwd);
+						ResultSet rs4 = MysqlConnect.sqlQuery(GetstateIDsql,conn);
 						try {
 							rs4.next();
 							projecttype__ID = Integer.parseInt(rs4.getString(1));
@@ -262,9 +253,7 @@ public class NSF {
 						catch (Exception e) {
 							;
 						}
-						finally {
-							if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-						}
+
 					}
 		
 					// Let us see if we can find the investigator in the already existing data. 
@@ -272,22 +261,21 @@ public class NSF {
 					// We first use email, then name.
 					int investigator_index__inv_id = -1;
 					String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE EMAIL_ADDRESS LIKE \"" +  investigator_data__EMAIL_ADDRESS + "\";";
-					conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet rs5 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn,host,user,passwd);
+					ResultSet rs5 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 					try {
 						rs5.next();
 						investigator_index__inv_id = Integer.parseInt(rs5.getString(1));
 					}
 					catch (Exception e) {
 						GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-						ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn,host,user,passwd);
+						ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 						try {
 							rs6.next();
 							investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
 						}
 						catch (Exception ee) {
 							String query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+LastName+", "+FirstName.substring(0,1)+"\"";
-							ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+							ResultSet result = MysqlConnect.sqlQuery(query,conn);
 							try {
 								result.next();
 								investigator_index__inv_id = result.getInt(1);
@@ -295,9 +283,7 @@ public class NSF {
 							catch (Exception except) {;}	
 						}
 					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 					
 					if (investigator_index__inv_id == -1) {
 						
@@ -306,17 +292,14 @@ public class NSF {
 						//Check if project exists in DB
 						String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 								+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-						conn = MysqlConnect.connection(host,user,passwd);
-						ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+						ResultSet result = MysqlConnect.sqlQuery(query,conn);
 						try {
 							result.next();
 							String number = result.getString(1);
 							continue;
 						}
 						catch (Exception ex) {;}
-						finally {
-							if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-						}
+
 					
 					}
 					

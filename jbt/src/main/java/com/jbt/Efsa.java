@@ -36,13 +36,14 @@ public class Efsa {
 		
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-		
+		Connection conn = MysqlConnect.connection(host,user,passwd);
 		String pat = "en/tender.*?/tender/|en/node/915681";
-		Efsa.scrape(url,pat,outfolder,host,user,passwd,dbname,logfile);
+		Efsa.scrape(url,pat,outfolder,conn,dbname,logfile);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 		return "EFSA";
 	}
 	
-	public static void scrape(String url, String pat, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+	public static void scrape(String url, String pat, String outfolder, Connection conn, String dbname, String logfile) throws IOException {
 		//Get current date to assign filename
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
@@ -175,17 +176,14 @@ public class Efsa {
 								
 								//Check if project exists in DB
 								query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\"";
-								Connection conn = MysqlConnect.connection(host,user,passwd);
-								ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+								ResultSet result = MysqlConnect.sqlQuery(query,conn);
 								try {
 									result.next();
 									String number = result.getString(1);
 									continue;
 								}
 								catch (Exception ex) {;}
-								finally {
-									if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-								}
+
 								
 								//Title
 								Element titleElem = content.select("span:containsOwn(Title attributed to)").first();
@@ -229,8 +227,7 @@ public class Efsa {
 									
 									//Check institution in MySQL DB
 									query = "SELECT * from "+dbname+".institution_data where institution_name like \""+institution_data__INSTITUTION_NAME+"\"";
-									conn = MysqlConnect.connection(host,user,passwd);
-									result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+									result = MysqlConnect.sqlQuery(query,conn);
 									try {
 										result.next();
 										institution_index__inst_id = result.getInt(1);
@@ -263,7 +260,7 @@ public class Efsa {
 										institution_data__INSTITUTION_COUNTRY = WordUtils.capitalizeFully(allMatches[instCountryIndex]);
 										query = "SELECT * FROM "+dbname+".countries WHERE COUNTRY_NAME = \""
 												+institution_data__INSTITUTION_COUNTRY.trim()+"\"";
-										result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+										result = MysqlConnect.sqlQuery(query,conn);
 										try {
 											result.next();
 											institution_data__INSTITUTION_COUNTRY = result.getString(1);
@@ -275,7 +272,7 @@ public class Efsa {
 										if (Integer.valueOf(institution_data__INSTITUTION_COUNTRY) == 1) {
 											try {
 												query = "SELECT abbrv FROM "+dbname+".states";
-												result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+												result = MysqlConnect.sqlQuery(query,conn);
 												while (result.next()) {
 													String state = result.getString(1);
 													Pattern patState = Pattern.compile("("+state+")");
@@ -299,10 +296,7 @@ public class Efsa {
 										}
 								
 									}
-									finally {
-										if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-									}
-									
+
 									//Write resultant values into CSV
 									String[] output = {project__PROJECT_NUMBER,project__PROJECT_TITLE,project__source_url,
 											project__PROJECT_START_DATE,

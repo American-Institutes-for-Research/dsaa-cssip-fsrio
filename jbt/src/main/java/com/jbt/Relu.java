@@ -38,12 +38,14 @@ public class Relu {
 		
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-		
-		Relu.scrape(links,outfolder,host,user,passwd,dbname,logfile);
+		Connection conn = MysqlConnect.connection(host,user,passwd);
+
+		Relu.scrape(links,outfolder,conn, dbname,logfile);
+		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 		return "RELU";
 	}
 	
-	public static void scrape(String[] links, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+	public static void scrape(String[] links, String outfolder, Connection conn, String dbname, String logfile) throws IOException {
 		//Get current date to assign filename
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
@@ -119,17 +121,14 @@ public class Relu {
 					//Project number
 					project__PROJECT_NUMBER = finaldoc.select("th:containsOwn(Award:)").first().nextElementSibling().text();
 					query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\"";
-					Connection conn = MysqlConnect.connection(host,user,passwd);
-					ResultSet result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					ResultSet result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						String number = result.getString(1);
 						continue;
 					}
 					catch (Exception ex) {;}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 					
 					//Project source URL
 					project__source_url = projLink.attr("href");
@@ -172,8 +171,7 @@ public class Relu {
 					
 					//Check institution in MySQL DB
 					query = "SELECT * from "+dbname+".institution_data where institution_name like \""+institution_data__INSTITUTION_NAME+"\"";
-					conn = MysqlConnect.connection(host,user,passwd);
-					result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+					result = MysqlConnect.sqlQuery(query,conn);
 					try {
 						result.next();
 						institution_index__inst_id = result.getInt(1);
@@ -182,9 +180,7 @@ public class Relu {
 					catch (Exception e) {
 
 					}
-					finally {
-						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-					}
+
 					//There can be several PIs - so, iterate through all and create separate rows for each
 					for (String piOne : piInfo.split(" and ")) {
 						piLastName = piOne.split(" ")[piOne.split(" ").length-1];
@@ -197,15 +193,14 @@ public class Relu {
 
 						//Check PI name in MySQL DB
 						query = "SELECT * FROM "+dbname+".investigator_data where name like \""+piName+"\"";
-						conn = MysqlConnect.connection(host,user,passwd);
-						result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+						result = MysqlConnect.sqlQuery(query,conn);
 						try {
 							result.next();
 							investigator_index__inv_id = result.getInt(1);
 						}
 						catch (Exception e) {
 							query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-							result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+							result = MysqlConnect.sqlQuery(query,conn);
 							try {
 								result.next();
 								investigator_index__inv_id = result.getInt(1);
@@ -214,9 +209,7 @@ public class Relu {
 								
 							}	
 						}
-						finally {
-    						if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-    					}
+
 						
 						if (investigator_index__inv_id == -1) {
 							investigator_data__name = piName;
@@ -226,17 +219,14 @@ public class Relu {
 							//Check if project exists in DB
 							query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 									+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-							conn = MysqlConnect.connection(host,user,passwd);
-							result = MysqlConnect.sqlQuery(query,conn,host,user,passwd);
+							result = MysqlConnect.sqlQuery(query,conn);
 							try {
 								result.next();
 								String number = result.getString(1);
 								continue;
 							}
 							catch (Exception ex) {;}
-							finally {
-								if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}
-							}
+
 						}
 						
 						//Write resultant values into CSV
