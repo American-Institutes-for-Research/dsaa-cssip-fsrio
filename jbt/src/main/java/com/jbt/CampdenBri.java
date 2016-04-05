@@ -30,7 +30,7 @@ import com.opencsv.CSVWriter;
 public class CampdenBri {
 	
 	
-	public static String main(String outfolder, String[] links, String[] links2, String host, String user, String passwd, String dbname) throws IOException {
+	public static String campdenMain(String outfolder, String[] links, String[] links2, String host, String user, String passwd, String dbname) throws IOException {
 		Connection conn = MysqlConnect.connection(host,user,passwd);
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);

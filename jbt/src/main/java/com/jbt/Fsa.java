@@ -35,7 +35,7 @@ import com.opencsv.CSVWriter;
 
 public class Fsa {
 
-	public static String main(String[] links, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+	public static String fsaMain(String[] links, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		Connection conn = MysqlConnect.connection(host,user,passwd);
 
 		Logger logger = Logger.getLogger ("");

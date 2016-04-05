@@ -1,0 +1,344 @@
+2016-04-05 13:49:02   Perhaps the link is broken or does not exist - http://ted.europa.eu/udl?uri=TED:NOTICE:328519-2015:TEXT:DE:HTML&tabId=1 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Efsa.scrape(Efsa.java:155)
+	at com.jbt.Efsa.efsaMain(Efsa.java:41)
+	at com.jbt.Run.main(Run.java:71)
+
+2016-04-05 13:49:02   Perhaps the link is broken or does not exist - HTTP://TED.EUROPA.EU/UDL?URI=TED:NOTICE:207526-2015:TEXT:EN:HTML&SRC=0&TABID=0 . Here is some help with traceback:com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException: 404 Not Found for http://ted.europa.eu/TED/misc/pageNotFound.do
+	at com.gargoylesoftware.htmlunit.WebClient.throwFailingHttpStatusCodeExceptionIfNecessary(WebClient.java:537)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:362)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:417)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:402)
+	at com.jbt.Efsa.scrape(Efsa.java:118)
+	at com.jbt.Efsa.efsaMain(Efsa.java:41)
+	at com.jbt.Run.main(Run.java:71)
+
+2016-04-05 13:49:02   Perhaps the link is broken or does not exist - http://ted.europa.eu/udl?uri=ted:notice:313730-2014:text:en:html&src=0 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Efsa.scrape(Efsa.java:153)
+	at com.jbt.Efsa.efsaMain(Efsa.java:41)
+	at com.jbt.Run.main(Run.java:71)
+
+2016-04-05 13:49:02   Perhaps the link is broken or does not exist - HTTP://TED.EUROPA.EU/UDL?URI=TED:NOTICE:130723-2014:TEXT:EN:HTML . Here is some help with traceback:com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException: 404 Not Found for http://ted.europa.eu/TED/misc/pageNotFound.do
+	at com.gargoylesoftware.htmlunit.WebClient.throwFailingHttpStatusCodeExceptionIfNecessary(WebClient.java:537)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:362)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:417)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:402)
+	at com.jbt.Efsa.scrape(Efsa.java:118)
+	at com.jbt.Efsa.efsaMain(Efsa.java:41)
+	at com.jbt.Run.main(Run.java:71)
+
+2016-04-05 14:17:29   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/allergy-research/allergy-guidance/allergeninfononprepackedfoods . Here is some help with traceback:java.lang.IllegalStateException: No match found
+	at java.util.regex.Matcher.group(Unknown Source)
+	at com.jbt.Fsa.scrape(Fsa.java:139)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:17:49   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/allergy-research/more-allergy-research/t07review2008 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:17:54   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/allergy-research/more-allergy-research/jointresearchreport . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:18:04   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/allergy-research/more-allergy-research/allergy-prog-review-2012 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:18:12   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/allergy-research/more-allergy-research/report-of-workshop-on-adult-food-allergy . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:18:27   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/b12programme . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:18:36   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/b13programme . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:18:40   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/p01programme . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:19:39   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/m01prog . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:19:43   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/b15programme . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:19:47   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/b15programme/b15projects . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:19:55   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/eggsresearch-0/b15review . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:20:03   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/b16programme . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:20:10   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/b16programme/shellfish_toxins . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:20:16   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/b14programme/b14projlist . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:20:26   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/b14programme . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:20:34   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/microfunders/msffg . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:20:43   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/foodborneillness/microfunders/intestinal . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:33:22   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/radiologicalresearch/radiosurv/radiological-habits-survey . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:33:32   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/radiologicalresearch/radiosurv/chernobyl . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:33:43   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/radiologicalresearch/radiosurv/rife . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:33:49   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/radiologicalresearch/radiosurv/radiologicalreview . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:36:36   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/choiceandstandardsresearch/enf-research/fsmevaluation . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:36:46   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/choiceandstandardsresearch/enf-research/foodhygienesurvey . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:37:07   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/choiceandstandardsresearch/foodchain/summary . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:37:18   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/choiceandstandardsresearch/foodchain/chicken . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:37:27   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/choiceandstandardsresearch/foodchain/method . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:40:12   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/ssres/foodsafetyss/balance-of-risks-and-responsibilities . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:40:17   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/ssres/foodsafetyss/gmfoodpublicattitudes . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:40:26   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/ssres/foodsafetyss/publicattitudesmeatcontrols . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:40:42   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/ssres/foodsafetyss/gm-labelling . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:41:12   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/ssres/foodsafetyss/evalratings . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:41:20   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/ssres/foodsafetyss/vegresearch . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:41:53   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/research/ssres/foodsafetyss/citforumcampy . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:42:01   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/ssres/foodsafetyss/nano . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:43:18   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/supportingresearch/methodsofanalysisresearch/aoachplc . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:43:23   Very unlikely here that something is broken - exception is just because it's not a projectbut a project list or seminar or workshop that's not a project - double check for the ease of your heart at http://www.food.gov.uk/science/research/supportingresearch/strategicevidenceprogramme . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fsa.scrape(Fsa.java:133)
+	at com.jbt.Fsa.fsaMain(Fsa.java:44)
+	at com.jbt.Run.main(Run.java:97)
+
+2016-04-05 14:43:51   Perhaps the link is broken or does not exist; it is also frequent at this particular website to have Unicode URLs that are not easily parsed - see at http://www.safefood.eu/Professional/Portfolio/1-Microbiology/The-validation-of-the-Qualicon-ABAX®-system-for-us.aspx . and get project info manually if necessary. Here is some help with traceback:com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException: 404 Not Found for http://www.safefood.eu/Professional/Research-Portfolio/1-Microbiology-Food-Hygiene/The-validation-of-the-Qualicon-ABAX%C3%82%C2%AE-system-for-us.aspx
+	at com.gargoylesoftware.htmlunit.WebClient.throwFailingHttpStatusCodeExceptionIfNecessary(WebClient.java:537)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:362)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:417)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:402)
+	at com.jbt.Fspb.scrape(Fspb.java:89)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the link is broken or does not exist; it is also frequent at this particular website to have Unicode URLs that are not easily parsed - see at http://www.safefood.eu/Professional/Portfolio/4-Nutrition-and-Healthy-Eating/Analysis-of-the-National-Children’s-Survey.aspx . and get project info manually if necessary. Here is some help with traceback:com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException: 404 Not Found for http://www.safefood.eu/Professional/Research-Portfolio/3-Nutrition-Healthy-Eating/Analysis-of-the-National-Children%C3%A2%C2%80%C2%99s-Survey.aspx
+	at com.gargoylesoftware.htmlunit.WebClient.throwFailingHttpStatusCodeExceptionIfNecessary(WebClient.java:537)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:362)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:417)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:402)
+	at com.jbt.Fspb.scrape(Fspb.java:89)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the link is broken or does not exist; it is also frequent at this particular website to have Unicode URLs that are not easily parsed - see at http://www.safefood.eu/Professional/Portfolio/4-Nutrition-and-Healthy-Eating/Nutrition-Take-Out-series-–-wrap-style-sandwiches.aspx . and get project info manually if necessary. Here is some help with traceback:com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException: 404 Not Found for http://www.safefood.eu/Professional/Research-Portfolio/3-Nutrition-Healthy-Eating/Nutrition-Take-Out-series-%C3%A2%C2%80%C2%93-wrap-style-sandwiches.aspx
+	at com.gargoylesoftware.htmlunit.WebClient.throwFailingHttpStatusCodeExceptionIfNecessary(WebClient.java:537)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:362)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:417)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:402)
+	at com.jbt.Fspb.scrape(Fspb.java:89)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the link is broken or does not exist; it is also frequent at this particular website to have Unicode URLs that are not easily parsed - see at http://www.safefood.eu/Professional/Portfolio/4-Nutrition-and-Healthy-Eating/Nutrition-Take-Out-series-–-pizza,-burgers-and-Chi.aspx . and get project info manually if necessary. Here is some help with traceback:com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException: 404 Not Found for http://www.safefood.eu/Professional/Research-Portfolio/3-Nutrition-Healthy-Eating/Nutrition-Take-Out-series-%C3%A2%C2%80%C2%93-pizza,-burgers-and-Chi.aspx
+	at com.gargoylesoftware.htmlunit.WebClient.throwFailingHttpStatusCodeExceptionIfNecessary(WebClient.java:537)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:362)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:417)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:402)
+	at com.jbt.Fspb.scrape(Fspb.java:89)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the link is broken or does not exist; it is also frequent at this particular website to have Unicode URLs that are not easily parsed - see at http://www.safefood.eu/Professional/Portfolio/5-Consumer-Focused-Reviews/Consumer-Focused-Review-of-Men’s-Food-Behaviour.aspx . and get project info manually if necessary. Here is some help with traceback:com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException: 404 Not Found for http://www.safefood.eu/Professional/Research-Portfolio/4-Consumer-Focused-Reviews/Consumer-focused-review-of-men%C3%A2%C2%80%C2%99s-food-behaviour.aspx
+	at com.gargoylesoftware.htmlunit.WebClient.throwFailingHttpStatusCodeExceptionIfNecessary(WebClient.java:537)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:362)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:417)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:402)
+	at com.jbt.Fspb.scrape(Fspb.java:89)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the project information is not complete yet and needs to be re-scraped later - pass it for now and come back later . Double check here if you wish - http://www.safefood.eu/Professional/Portfolio/5-Consumer-Focused-Reviews/Consumer-Focused-Review-of-the-chicken-food-chain.aspx . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fspb.scrape(Fspb.java:250)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the project information is not complete yet and needs to be re-scraped later - pass it for now and come back later . Double check here if you wish - http://www.safefood.eu/Professional/Portfolio/5-Consumer-Focused-Reviews/Consumer-focused-review-of-food-behaviours.aspx . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fspb.scrape(Fspb.java:250)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the project information is not complete yet and needs to be re-scraped later - pass it for now and come back later . Double check here if you wish - http://www.safefood.eu/Professional/Portfolio/5-Consumer-Focused-Reviews/Consumer-focused-review-of-the-finfish-food-chain.aspx . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fspb.scrape(Fspb.java:250)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the project information is not complete yet and needs to be re-scraped later - pass it for now and come back later . Double check here if you wish - http://www.safefood.eu/Professional/Portfolio/5-Consumer-Focused-Reviews/Consumer-focused-review-of-where-our-food-comes-fr.aspx . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fspb.scrape(Fspb.java:250)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the project information is not complete yet and needs to be re-scraped later - pass it for now and come back later . Double check here if you wish - http://www.safefood.eu/Professional/Portfolio/5-Consumer-Focused-Reviews/Consumer-focused-review-of-the-pork-supply-chain.aspx . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fspb.scrape(Fspb.java:250)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the project information is not complete yet and needs to be re-scraped later - pass it for now and come back later . Double check here if you wish - http://www.safefood.eu/Professional/Portfolio/5-Consumer-Focused-Reviews/Consumer-focused-review-of-the-milk-supply-chain.aspx . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fspb.scrape(Fspb.java:250)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the project information is not complete yet and needs to be re-scraped later - pass it for now and come back later . Double check here if you wish - http://www.safefood.eu/Professional/Portfolio/5-Consumer-Focused-Reviews/Consumer-focused-review-of-the-beef-food-chain.aspx . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fspb.scrape(Fspb.java:250)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:43:51   Perhaps the project information is not complete yet and needs to be re-scraped later - pass it for now and come back later . Double check here if you wish - http://www.safefood.eu/Professional/Portfolio/5-Consumer-Focused-Reviews/Consumer-focused-review-of-the-fruit-and-vegetable.aspx . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Fspb.scrape(Fspb.java:250)
+	at com.jbt.Fspb.fspbMain(Fspb.java:50)
+	at com.jbt.Run.main(Run.java:110)
+
+2016-04-05 14:51:34   Perhaps the link is broken or does not exist, e.g. Page Not Found. The website can be broken altogether because it happens on RELU - http://relu.data-archive.ac.uk/explore-data/search-browse/project/?ID=RES-229-27-0007 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Relu.scrape(Relu.java:122)
+	at com.jbt.Relu.reluMain(Relu.java:43)
+	at com.jbt.Run.main(Run.java:162)
+
+2016-04-05 14:54:23   Something went terribly wrong with scraping here or maybe just a generic link to Related publications that's not needed here - check at http://cereals.ahdb.org.uk/publications.aspx?subcategory=2525&relatedPublications=4016 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.AHDB.cereals(AHDB.java:787)
+	at com.jbt.AHDB.ahdbMain(AHDB.java:58)
+	at com.jbt.Run.main(Run.java:175)
+
+2016-04-05 14:54:23   Something went terribly wrong with scraping here or maybe just a generic link to Related publications that's not needed here - check at http://cereals.ahdb.org.uk/publications.aspx?subcategory=2523&relatedPublications=4017 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.AHDB.cereals(AHDB.java:787)
+	at com.jbt.AHDB.ahdbMain(AHDB.java:58)
+	at com.jbt.Run.main(Run.java:175)
+
+2016-04-05 14:54:23   Something went terribly wrong with scraping here or maybe just a generic link to Related publications that's not needed here - check at http://cereals.ahdb.org.uk/publications.aspx?subcategory=2524&relatedPublications=4018 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.AHDB.cereals(AHDB.java:787)
+	at com.jbt.AHDB.ahdbMain(AHDB.java:58)
+	at com.jbt.Run.main(Run.java:175)
+
+2016-04-05 14:54:23   Something went terribly wrong with scraping here or maybe just a generic link to Related publications that's not needed here - check at http://cereals.ahdb.org.uk/publications.aspx?subcategory=2521&relatedPublications=4019 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.AHDB.cereals(AHDB.java:787)
+	at com.jbt.AHDB.ahdbMain(AHDB.java:58)
+	at com.jbt.Run.main(Run.java:175)
+
+2016-04-05 14:54:23   Something went terribly wrong with scraping here or maybe just a generic link to Related publications that's not needed here - check at http://cereals.ahdb.org.uk/publications.aspx?subcategory=2527&relatedPublications=4020 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.AHDB.cereals(AHDB.java:787)
+	at com.jbt.AHDB.ahdbMain(AHDB.java:58)
+	at com.jbt.Run.main(Run.java:175)
+
+2016-04-05 14:54:23   Something went terribly wrong with scraping here or maybe just a generic link to Related publications that's not needed here - check at http://cereals.ahdb.org.uk/publications.aspx?subcategory=2528&relatedPublications=4021 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.AHDB.cereals(AHDB.java:787)
+	at com.jbt.AHDB.ahdbMain(AHDB.java:58)
+	at com.jbt.Run.main(Run.java:175)
+
+2016-04-05 14:54:23   Something went terribly wrong with scraping here or maybe just a generic link to Related publications that's not needed here - check at http://cereals.ahdb.org.uk/publications.aspx?subcategory=2526&relatedPublications=4022 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.AHDB.cereals(AHDB.java:787)
+	at com.jbt.AHDB.ahdbMain(AHDB.java:58)
+	at com.jbt.Run.main(Run.java:175)
+
+2016-04-05 14:54:23   Something went terribly wrong with scraping here or maybe just a generic link to Related publications that's not needed here - check at http://cereals.ahdb.org.uk/publications/2015/september/01/developing-new-types-of-wheat-with-good-breadmaking-at-low-protein-content.aspx . Here is some help with traceback:java.io.IOException
+	at com.jbt.AHDB.cereals(AHDB.java:789)
+	at com.jbt.AHDB.ahdbMain(AHDB.java:58)
+	at com.jbt.Run.main(Run.java:175)
+

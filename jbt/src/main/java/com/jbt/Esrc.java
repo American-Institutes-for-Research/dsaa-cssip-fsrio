@@ -31,7 +31,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.opencsv.CSVWriter;
 
 public class Esrc {
-	public static String main(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
+	public static String esrcMain(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
 		Connection conn = MysqlConnect.connection(host,user,passwd);

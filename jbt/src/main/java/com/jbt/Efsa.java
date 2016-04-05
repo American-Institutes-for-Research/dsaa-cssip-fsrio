@@ -32,7 +32,7 @@ import com.opencsv.CSVWriter;
 
 public class Efsa {
 
-	public static String main(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+	public static String efsaMain(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);

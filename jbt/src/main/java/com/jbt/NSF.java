@@ -30,7 +30,7 @@ import java.util.regex.Matcher;
 
 public class NSF {
 	
-	public static String main(String inputfolder, String outfolder, String host, String user, String passwd, String dbname) throws IOException,SAXException,ParserConfigurationException {
+	public static String nsfMain(String inputfolder, String outfolder, String host, String user, String passwd, String dbname) throws IOException,SAXException,ParserConfigurationException {
 		Connection conn = MysqlConnect.connection(host,user,passwd);
 		scrape(outfolder,inputfolder,conn,dbname);
 		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}	

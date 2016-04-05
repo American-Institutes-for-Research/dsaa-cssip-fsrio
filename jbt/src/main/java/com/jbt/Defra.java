@@ -28,7 +28,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.opencsv.CSVWriter;
 
 public class Defra {
-	public static String main(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
+	public static String defraMain(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
 		
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);

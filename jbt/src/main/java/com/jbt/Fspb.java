@@ -42,7 +42,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.opencsv.CSVWriter;
 
 public class Fspb {
-	public static String main(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+	public static String fspbMain(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		Connection conn = MysqlConnect.connection(host,user,passwd);
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);

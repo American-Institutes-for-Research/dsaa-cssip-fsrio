@@ -37,7 +37,7 @@ import com.opencsv.CSVWriter;
 import java.net.URL;
 
 public class AHDB {
-	public static void main(String outfolder, String[] links, String host, String user, String passwd, String dbname, String logfile) throws Exception {
+	public static void ahdbMain(String outfolder, String[] links, String host, String user, String passwd, String dbname, String logfile) throws Exception {
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
 		Connection conn = MysqlConnect.connection(host,user,passwd);

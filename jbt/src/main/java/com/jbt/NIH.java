@@ -22,7 +22,7 @@ public class NIH {
 	HashMap<String, String> abstracts = new HashMap<String, String>();
 	HashMap<String, String> indexMap = new HashMap<String, String>();
 	
-	public static String main(String inputfolder, String inputfolder_abstracts, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
+	public static String nihMain(String inputfolder, String inputfolder_abstracts, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
 		
 		NIH obj  =  new NIH();
 		Connection conn = MysqlConnect.connection(host,user,passwd);
