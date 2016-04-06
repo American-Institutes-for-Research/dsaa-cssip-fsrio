@@ -35,11 +35,23 @@ public class CampdenBri {
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
 		
+		try {
 		CampdenBri.scrapeV2(links,outfolder,conn,dbname);
-		
+		} catch (Exception ex) {
+			System.out.println("Warning: The scraper did not succeed. This error has not been seen before. Please share the following information with the IT support to troubleshoot:")
+			ex.printStackTrace();
+			System.out.println("***We recommend that you re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+		}
+
 		/* These links2 are not part of current FSRIO approach but perhaps Campden BRI changed their website
 		and we can benefit from additional project info */
+		try {
 		CampdenBri.scrapeV1(links2,outfolder,conn,dbname);
+		} catch (Exception ex) {
+			System.out.println("Warning: The scraper did not succeed. This error has not been seen before. Please share the following information with the IT support to troubleshoot:")				ex.printStackTrace();
+			System.out.println("***We recommend that you re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+		}
+
 		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 		return "CampdenBRI";
 		

@@ -36,43 +36,128 @@ import com.opencsv.CSVWriter;
 
 import java.net.URL;
 
+/**
+* This class scrapes six websites associated with the Agriculture and Horticulture Development Board.
+* Returns void and writes output directly into the tab-separate spreadsheet for review and quality control.
+* Utilizes the links provided by FSRIO and requires several parameters specified in the main Run class.
+* 
+* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
+* @param links       The main web links associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet. The links are "entry points" into the websites where web pages for individual projects can be found.
+* @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
+* @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
+* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
+* @see               Run
+*/
+
 public class AHDB {
 	public static void ahdbMain(String outfolder, String[] links, String host, String user, String passwd, String dbname, String logfile) throws Exception {
+		/**
+		* The gargoylsoftware Web Client is very capricious and prints out every JavaScript error possible even when they are meaningless for the scraper.
+		* We have to shut down the default logger to make our customized one provide more meaningful messages.
+		*/
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
+		
+		/**
+		* Opening one connection per scraper, as instructed. 
+		*/
 		Connection conn = MysqlConnect.connection(host,user,passwd);
+		
+		/**
+		* This scraper goes through six websites associated with the Agriculture and Horticulture Development Board.
+		* All major weblinks are specified in the config file (typically, process.cfg) and can be retrieved/updated there.
+		*/
 		for (String link : links) {
+			/**
+			* The exception is thrown as a warning message for every method (website). 
+			* It has been noticed that other system parameters, such as firewall settings, can be at fault.
+			* It is recommended to re-run this data source at least one more to make sure that the error actually exists.
+			*/
+				
 			if (link.replace("potatoes", "").length() < link.length()) {
-				AHDB.potatoes(outfolder, link,conn, dbname);
+				try {
+					AHDB.potatoes(outfolder, link,conn, dbname);
+				} catch (Exception ex) {
+					System.out.println("Warning: The AHDB potatoes scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					ex.printStackTrace();
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+				}
 			}
 			if (link.replace("horticulture", "").length() < link.length()) {
+				try {
 				AHDB.horticulture(outfolder, link,conn,dbname);
+				} catch (Exception ex) {
+					System.out.println("Warning: The AHDB horticulture scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					ex.printStackTrace();
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+				}
+
 			}
 			if (link.replace("dairy", "").length() < link.length()) {
+				try {
 				AHDB.dairy(outfolder, link,conn,dbname);
+				} catch (Exception ex) {
+					System.out.println("Warning: The AHDB dairy scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					ex.printStackTrace();
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+				}
+
 			}
 			if (link.replace("beefandlamb", "").length() < link.length()) {
+				try {
 				AHDB.meat(outfolder, link,conn,dbname,logfile);
+				} catch (Exception ex) {
+					System.out.println("Warning: The AHDB beef and lamb scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					ex.printStackTrace();
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+				}
+
 			}
 			if (link.replace("cereals", "").length() < link.length()) {
+				try {
 				AHDB.cereals(outfolder, link,conn,dbname,logfile);
+				} catch (Exception ex) {
+					System.out.println("Warning: The AHDB cereals scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					ex.printStackTrace();
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+				}
+
 			}
 			if (link.replace("pork", "").length() < link.length()) {
+				try {
 				AHDB.pork(outfolder,link,conn,dbname);
+				} catch (Exception ex) {
+					System.out.println("Warning: The AHDB pork scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					ex.printStackTrace();
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+				}
+
 			}
 		}
 		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 	}
 
 	public static void potatoes(String outfolder, String url,Connection conn, String dbname) throws Exception {
+		/**
+		* The date is needed in every subclass for logging and file naming purposes given that implement a customized logger for the most transparent and easiest error handling and troubleshooting.
+		*/
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String currentDateLog = dateFormat.format(current);
 
+		/**
+		* As seen, the naming convention for the output files is class, method, and current date. This is needed to impose version control and easier data organization for FSRIO staff.
+		*/
 		CSVWriter csvout = new CSVWriter(new FileWriter(outfolder+"AHDB_potatoes_"+currentStamp+".csv"),'\t');
 		
+		/**
+		* Different websites can provide different information on individual projects that is mapped to the FSRIO Research Projects Database.
+		* The naming convention here is [table name]__[data_field]. It is important to keep this naming convention for the database upload process after the output QA is complete.
+		*/
 		String[] header = {"project__PROJECT_NUMBER", "project__PROJECT_TITLE", 
 				"project__source_url", "project__PROJECT_START_DATE",
 				"project__PROJECT_END_DATE", "project__PROJECT_OBJECTIVE",
@@ -80,10 +165,21 @@ public class AHDB {
 				"investigator_data__name", "institution_index__inst_id", "investigator_index__inv_id","institution_data__INSTITUTION_NAME" };
 		csvout.writeNext(header);
 		
+		/**
+		* The following code initiates the webClient and sets timeout at 50000 ms. 
+		* Some websites, particularly Food Standards Agency are notorious for speed of response and require such high timeout value.
+		*/
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_38);
 		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.getOptions().setTimeout(50000);
 		
+		/**
+		* Every web scraper consists of two parts:
+		* 1) identify links to individual project pages
+		* 2) scrape all necessary information from those individual project pages
+		* <p>
+		* The website structure is very different and it is impossible to template anything here from class extends and overrides.
+		*/
 		for (int i = 0; i < 4; i++ ){
 			if(i != 0) {
 				url = url + "&page=" + String.valueOf(i);
@@ -93,9 +189,22 @@ public class AHDB {
 			webRequest.setCharset("utf-8");
 			HtmlPage startPage = webClient.getPage(webRequest);
 			Document doc = Jsoup.parse(startPage.asXml());
+			
+			/**
+			* Here is where we finished Part 1: identifying links to individual project pages.
+			*/
 			Elements links = doc.select("li[class=listing-publication").select("div[class=pub-content]").select("a");
+			
 			for (Element link: links) {
+				/**
+				* In this website, the list of project links can also have some PDF files that are reports. We have to pass them here.
+				*/
 				if (link.attr("href").contains(".pdf")) continue;
+				
+				/**
+				* Every web scraper declares a list of variables that are present in project web pages. 
+				* It is important that different websites can have different lists of data fields. That explains why we do not template, extend and override.
+				*/
 				String project__PROJECT_NUMBER = "";
 				String project__PROJECT_TITLE = "";
 				String project__source_url = "";
@@ -107,19 +216,23 @@ public class AHDB {
 				String project__PROJECT_FUNDING = "";
 				String agency_index__aid = "146";
 				String investigator_data__name = "";
+				String institution_data__INSTITUTION_NAME = "";
 				int institution_index__inst_id = -1;
 				int investigator_index__inv_id = -1;
 				String comment = "";
 				
-				//Processing variables
+				/**
+				*Processing variables
+				*/
 				String piName = "";
 				String piLastName = "";
 				String piFirstName = "";
 				
-				//Institution variables
-				String institution_data__INSTITUTION_NAME = "";
-				
+				/**
+				* Very important field - project__source_url - is used in Warning notes and for logging to check back. It is critical during QA too.
+				*/
 				project__source_url = "http://potatoes.ahdb.org.uk/" + link.attr("href");
+				
 				Document finaldoc = Jsoup.connect(project__source_url).timeout(50000).get();
 				project__PROJECT_TITLE = finaldoc.select(":containsOwn(Full Research Project Title)").text().replace("Full Research Project Title:", "").trim();
 				project__PROJECT_NUMBER = finaldoc.select("h1[id=page-title]").text().split(" ")[0];
@@ -127,14 +240,18 @@ public class AHDB {
 					project__PROJECT_TITLE = finaldoc.select("h1[id=page-title]").text().replace(project__PROJECT_NUMBER+" ", "");
 				}
 				
-				//Sometimes there's no project number and therefore the link need to be passed
+				/**
+				* Sometimes there's no project number and therefore the link need to be passed
+				*/
 				Pattern checkProjNum = Pattern.compile("\\d+");
 				Matcher matchProjNum = checkProjNum.matcher(project__PROJECT_NUMBER);
 				if (!matchProjNum.find()) {
 					continue;
 				}
 				
-				//Parse investigator name in correct format
+				/**
+				* Parse investigator name in correct format: [Last Name], [First Name]
+				*/
 				piName = finaldoc.select("div[class=field field-name-field-author field-type-text field-label-inline clearfix]").select("div[class=field-item even]").text();
 				piLastName = piName.split(" ")[piName.split(" ").length-1];
 				piFirstName = piName.replace(" "+piLastName,"");
@@ -152,8 +269,19 @@ public class AHDB {
 					project__PROJECT_END_DATE = matcher.group();
 				}
 				
-				//Find investigator
+				
+				/**
+				* Based on FSRIO guidance, we are checking on several fields whether the project exists in the DB: project number, project start date, project end date, institution names and/or PI name (if applicable).
+				* This is exactly what the following MySQL queries are doing.
+				*/
+				
 				String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
+				/**
+				* Check if investigator exists in the current FSRIO Research Projects Database.
+				* Exception is implemented to try different variants because of spelling mistakes possible in PI names.
+				* The last Exception except here needs to be ignored because by default we assume that the PI does not exist in the database and assign -1 index.
+				*/
+				
 				ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 				try {
 					rs6.next();
@@ -176,7 +304,9 @@ public class AHDB {
 
 				} else {
 
-					//Check if project exists in DB
+					/**
+					* Check if project exists in DB
+					*/
 					String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
 					ResultSet result = MysqlConnect.sqlQuery(query,conn);
@@ -193,12 +323,18 @@ public class AHDB {
 				DateFormat dateFormatEnter = new SimpleDateFormat("yyyy-MM-dd");
 				project__DATE_ENTERED = dateFormatEnter.format(current);
 				
-				//Parse institution name - might be several
+				/**
+				* Parse institution name - might be several
+				*/
 				String[] institutions = finaldoc.select("div[class=field field-name-field-contractor field-type-text field-label-inline clearfix]").select("div[class=field-item even]").text().split(", | & ");
 				for (String inst : institutions ) {
 					institution_data__INSTITUTION_NAME = inst;
 					
-					// Check DB for institution
+					/** 
+					* Check if institution exists in DB
+					* By default we assume that it does not exist in the DB. 
+					* (Exception e) adds a comment to output spreadsheet because some institution fields are not present at the web page but FSRIO might want to retrieve additional information from elsewhere on the Internet.
+					*/
 					String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
 					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
 					try {
@@ -211,7 +347,10 @@ public class AHDB {
 
 					
 					
-					
+					/**
+					* Outputting all data into tab-separated file. 
+					* To prevent any mishaps with opening the file, replacing all new lines, tabs and returns in the fields where these can occur.
+					*/
 					String[] output = {project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," "), project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," "), 
 							project__source_url, project__PROJECT_START_DATE,
 							project__PROJECT_END_DATE, project__PROJECT_OBJECTIVE.replaceAll("[\\n\\t\\r]"," "),
@@ -226,14 +365,24 @@ public class AHDB {
 	}
 	
 	public static void horticulture(String outfolder, String url, Connection conn, String dbname) throws Exception {
+		/**
+		* The date is needed in every subclass for logging and file naming purposes given that implement a customized logger for the most transparent and easiest error handling and troubleshooting.
+		*/
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String currentDateLog = dateFormat.format(current);
 
+		/**
+		* As seen, the naming convention for the output files is class, method, and current date. This is needed to impose version control and easier data organization for FSRIO staff.
+		*/
 		CSVWriter csvout = new CSVWriter(new FileWriter(outfolder+"AHDB_horticulture_"+currentStamp+".csv"),'\t');
 		
+		/**
+		* Different websites can provide different information on individual projects that is mapped to the FSRIO Research Projects Database.
+		* The naming convention here is [table name]__[data_field]. It is important to keep this naming convention for the database upload process after the output QA is complete.
+		*/
 		String[] header = {"project__PROJECT_NUMBER", "project__PROJECT_TITLE", 
 				"project__source_url", "project__PROJECT_START_DATE",
 				"project__PROJECT_END_DATE", "project__PROJECT_OBJECTIVE",
@@ -242,12 +391,24 @@ public class AHDB {
 				"institution_data__INSTITUTION_NAME"};
 		csvout.writeNext(header);
 		
+		/**
+		* The following code initiates the webClient and sets timeout at 50000 ms. 
+		* Some websites, particularly Food Standards Agency are notorious for speed of response and require such high timeout value.
+		*/
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_38);
 		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.getOptions().setTimeout(50000);
 		
+		/**
+		* Every web scraper consists of two parts:
+		* 1) identify links to individual project pages
+		* 2) scrape all necessary information from those individual project pages
+		* <p>
+		* The website structure is very different and it is impossible to template anything here from class extends and overrides.
+		*/
 		HtmlPage startPage = webClient.getPage(url);
 		Document doc = Jsoup.parse(startPage.asXml());
+		
 		
 		int nPages = doc.select("ul[class=pager]").select("li[class=pager-item").size();
 		String url2 = "";
@@ -261,9 +422,17 @@ public class AHDB {
 			startPage = webClient.getPage(url2);
 
 			doc = Jsoup.parse(startPage.asXml());
+			
+			/**
+			* Here is where we finished Part 1: identifying links to individual project pages.
+			*/
 			Elements links = doc.select("article").select("li[class=node-readmore first last]").select("a");
 
 			for(Element link: links) {
+				/**
+				* Every web scraper declares a list of variables that are present in project web pages. 
+				* It is important that different websites can have different lists of data fields. That explains why we do not template, extend and override.
+				*/
 				String project__PROJECT_NUMBER = "";
 				String project__PROJECT_TITLE = "";
 				String project__source_url = "";
@@ -276,29 +445,33 @@ public class AHDB {
 				String project__PROJECT_FUNDING = "";
 				String agency_index__aid = "146";
 				String investigator_data__name = "";
+				String institution_data__INSTITUTION_NAME = "";
 				int institution_index__inst_id = -1;
 				int investigator_index__inv_id = -1;
 				String comment = "";
 				
-				//Processing variables
+				/**
+				*Processing variables
+				*/
 				String piName = null;
 				String piLastName = null;
 				String piFirstName = null;
 				
-				//Institution variables
-				String institution_data__INSTITUTION_NAME = "";
-				
-				
+				/**
+				* Very important field - project__source_url - is used in Warning notes and for logging to check back. It is critical during QA too.
+				*/
 				project__source_url = "http://horticulture.ahdb.org.uk/" + link.attr("href");
+				
 				Document finaldoc = Jsoup.connect(project__source_url).timeout(50000).get();
 				project__PROJECT_TITLE = finaldoc.select("span[property=dc:title]").attr("content");
 				project__PROJECT_NUMBER = finaldoc.select("header").select("h2").text().split("-")[0].replace("HDC user info and login Search form ", "");
-
 				project__PROJECT_START_DATE = finaldoc.select("div[class=content]").select("div[class=field field-name-field-start-date field-type-datetime field-label-inline clearfix]").select("span").attr("content").substring(0, 4);
 				project__PROJECT_END_DATE = finaldoc.select("div[class=content]").select("div[class=field field-name-field-release-date field-type-datetime field-label-inline clearfix]").select("span").attr("content").substring(0, 4);
 				String temp = finaldoc.select("div[class=content]").select("div[class=field field-name-field-author field-type-text field-label-inline clearfix]").select("div[class=field-item even]").text();
 				
-				//Parse investigator name in correct format
+				/**
+				* Parse investigator name in correct format
+				*/
 				piName = temp.split(",")[0].replace(" Warwick Crop Centre","");
 				Pattern patName = Pattern.compile("^Prof |^Professor |^Dr. |^Doctor |^Dr |^Ms |^Mrs |^Mr ");
 				Matcher matchName = patName.matcher(piName);
@@ -307,6 +480,9 @@ public class AHDB {
 				piFirstName = piName.replace(" "+piLastName,"");
 				investigator_data__name = piLastName+", "+piFirstName;
 				
+				/** 
+				* It is normal at this website not to have institution information and it is not critical. So, no need to distract the flow by meaningful exception handler.
+				*/
 				try {
 					institution_data__INSTITUTION_NAME = temp.split(", ")[1];	
 				}
@@ -316,8 +492,10 @@ public class AHDB {
 					institution_data__INSTITUTION_NAME = "Warwick Crop Centre";
 				}
 				
-				//Parsing project objective - hard to deal with bad structure 
-				//including industry rep and cost fields that need to be removed
+				/**
+				* Parsing project objective - hard to deal with bad structure 
+				* including industry rep and cost fields that need to be removed
+				*/
 				Element projDoc = 
 						finaldoc.select("div[class=content]").select("div[class=field field-name-body field-type-text-with-summary field-label-hidden]").first().children().first().children().first();
 				Pattern badObj = Pattern.compile("cost:|cost\\):|industry rep",Pattern.CASE_INSENSITIVE);
@@ -341,8 +519,17 @@ public class AHDB {
 				DateFormat dateFormatEnter = new SimpleDateFormat("yyyy-MM-dd");
 				project__DATE_ENTERED = dateFormatEnter.format(current);
 				
-				// Find institution
+				/**
+				* Based on FSRIO guidance, we are checking on several fields whether the project exists in the DB: project number, project start date, project end date, institution names and/or PI name (if applicable).
+				* This is exactly what the following MySQL queries are doing.
+				*/
+				
 				String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
+				/** 
+				* Check if institution exists in DB
+				* By default we assume that it does not exist in the DB. 
+				* (Exception e) adds a comment to output spreadsheet because some institution fields are not present at the web page but FSRIO might want to retrieve additional information from elsewhere on the Internet.
+				*/
 				ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
 				try {
 					rs.next();
@@ -351,7 +538,12 @@ public class AHDB {
 				catch (Exception e) {
 					comment = "Please populate institution fields by exploring the institution named on the project.";
 				}
-				//Find investigator
+				
+				/**
+				* Check if investigator exists in the current FSRIO Research Projects Database.
+				* Exception is implemented to try different variants because of spelling mistakes possible in PI names.
+				* The last Exception except here needs to be ignored because by default we assume that the PI does not exist in the database and assign -1 index.
+				*/
 				String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
 				ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
 				try {
@@ -374,7 +566,9 @@ public class AHDB {
 				if (investigator_index__inv_id == -1) {
 				} else {
 
-					//Check if project exists in DB
+					/**
+					* Check if project exists in DB. Again, exception needs to be ignored.
+					*/
 					String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
 							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
 					ResultSet result = MysqlConnect.sqlQuery(query,conn);
@@ -388,6 +582,10 @@ public class AHDB {
 				
 				}
 
+				/**
+				* Outputting all data into tab-separated file. 
+				* To prevent any mishaps with opening the file, replacing all new lines, tabs and returns in the fields where these can occur.
+				*/
 				String[] output = {project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," "), project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," "), 
 						project__source_url, project__PROJECT_START_DATE,
 						project__PROJECT_END_DATE, project__PROJECT_OBJECTIVE.replaceAll("[\\n\\t\\r]"," "),
@@ -403,6 +601,7 @@ public class AHDB {
 	}
 
 	public static void dairy(String outfolder, String url, Connection conn, String dbname) throws Exception {
+		
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
