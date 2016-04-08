@@ -16,6 +16,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -302,9 +303,12 @@ public class Fspb {
 			}
 			
 			//Check institution in MySQL DB
-			query = "SELECT * from "+dbname+".institution_data where institution_name like \""+institution_data__INSTITUTION_NAME+"\"";
-			ResultSet result = MysqlConnect.sqlQuery(query,conn);
+			query = "SELECT * from  "+dbname+"institution_data where institution_name like ?;";
+			ResultSet result = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(query);
+				preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+				result = preparedStmt.executeQuery();
 				result.next();
 				institution_index__inst_id = result.getInt(1);
 			}
@@ -314,15 +318,22 @@ public class Fspb {
 
 			
 			//Check PI name in MySQL DB
-			query = "SELECT * FROM "+dbname+".investigator_data where name like \""+investigator_data__name+"\"";
+			query = "SELECT * FROM  "+dbname+"investigator_data where name like ?;";
 			
-			result = MysqlConnect.sqlQuery(query,conn);
+			result = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(query);
+				preparedStmt.setString(1, investigator_data__name);
+				result = preparedStmt.executeQuery();
 				result.next();
 				investigator_index__inv_id = result.getInt(1);
 				if (institution_index__inst_id == -1) {
 					String instindex = result.getString(5);
-					ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn);
+					String temp = "SELECT * from  "+dbname+"institution_data where id = ?";
+					PreparedStatement preparedStmt1 = conn.prepareStatement(temp);
+					preparedStmt1.setString(1, instindex);
+
+					ResultSet checkInst = preparedStmt1.executeQuery();
 					checkInst.next();
 					String existInst = checkInst.getString(2);
 					Pattern patInst = Pattern.compile(existInst);
@@ -334,13 +345,20 @@ public class Fspb {
 			}
 			catch (Exception e) {
 				try {
-					query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn);
+					query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
+					result = null;
+					PreparedStatement preparedStmt = conn.prepareStatement(query);
+					preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));
+					result = preparedStmt.executeQuery();
 					result.next();
 					investigator_index__inv_id = result.getInt(1);
 					if (institution_index__inst_id == -1) {
 						String instindex = result.getString(5);
-						ResultSet checkInst = MysqlConnect.sqlQuery("SELECT * from "+dbname+".institution_data where id = \""+instindex+"\"",conn);
+						String temp = "SELECT * from  "+dbname+"institution_data where id = ?";
+						PreparedStatement preparedStmt1 = conn.prepareStatement(temp);
+						preparedStmt1.setString(1, instindex);
+						
+						ResultSet checkInst = preparedStmt1.executeQuery();
 						checkInst.next();
 						String existInst = checkInst.getString(2);
 						Pattern patInst = Pattern.compile(existInst);
@@ -379,10 +397,16 @@ public class Fspb {
 				}
 			} else {
 				//Check if project exists in DB
-				query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-						+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-				result = MysqlConnect.sqlQuery(query,conn);
+				query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
+						+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
+				result = null;
 				try {
+					PreparedStatement preparedStmt = conn.prepareStatement(query);
+					preparedStmt.setString(1, project__PROJECT_NUMBER);
+					preparedStmt.setString(2, project__PROJECT_START_DATE);
+					preparedStmt.setString(3, project__PROJECT_END_DATE);
+					preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
+					result = preparedStmt.executeQuery();
 					result.next();
 					String number = result.getString(1);
 					continue;

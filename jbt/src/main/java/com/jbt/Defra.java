@@ -2,6 +2,7 @@ package com.jbt;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -128,10 +129,15 @@ public class Defra {
 			project__PROJECT_END_DATE = finaldoc.select("b:containsOwn(To:)").first().parent().text().replace("To: ","");
 			
 			//Check if project exists in DB
-			query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-					+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-			ResultSet result = MysqlConnect.sqlQuery(query,conn);
+			query = "SELECT PROJECT_NUMBER FROM  "+dbname+"project where PROJECT_NUMBER = ??"
+					+ " and PROJECT_START_DATE = ? and PROJECT_END_DATE = ?";
+			ResultSet result = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(query);
+				preparedStmt.setString(1, project__PROJECT_NUMBER);
+				preparedStmt.setString(2, project__PROJECT_START_DATE);
+				preparedStmt.setString(3, project__PROJECT_END_DATE);
+				result = preparedStmt.executeQuery();
 				result.next();
 				String number = result.getString(1);
 				continue;
@@ -152,9 +158,12 @@ public class Defra {
 			institution_data__INSTITUTION_NAME = instTab.text();
 			
 			//Check institution in MySQL DB
-			query = "SELECT * from "+dbname+".institution_data where institution_name regexp \""+institution_data__INSTITUTION_NAME+"\"";
-			result = MysqlConnect.sqlQuery(query,conn);
+			query = "SELECT * from  "+dbname+"institution_data where institution_name regexp ?;";
+			result = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(query);
+				preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+				result = preparedStmt.executeQuery();
 				result.next();
 				institution_index__inst_id = result.getInt(1);
 			}
@@ -163,9 +172,12 @@ public class Defra {
 				Matcher matchInst = patInst.matcher(institution_data__INSTITUTION_NAME);
 				if (matchInst.find()) {
 					//Check institution in MySQL DB (might be the one in parentheses)
-					query = "SELECT * from "+dbname+".institution_data where institution_name regexp \""+matchInst.group(1)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn);
+					query = "SELECT * from  "+dbname+"institution_data where institution_name regexp ?;";
+					result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, matchInst.group(1));
+						result = preparedStmt.executeQuery();
 						result.next();
 						institution_index__inst_id = result.getInt(1);
 					}
@@ -173,8 +185,10 @@ public class Defra {
 						
 						//Check institution in MySQL DB (might be the one in parentheses)
 						try {
-							query = "SELECT * from "+dbname+".institution_data where institution_name regexp \""+matchInst.group(1).split(" - ")[0]+"\"";
-							result = MysqlConnect.sqlQuery(query,conn);
+							query = "SELECT * from  "+dbname+"institution_data where institution_name regexp ?;";
+							PreparedStatement preparedStmt = conn.prepareStatement(query);
+							preparedStmt.setString(1, matchInst.group(1).split(" - ")[0]);
+							result = preparedStmt.executeQuery();
 							result.next();
 							institution_index__inst_id = result.getInt(1);
 						}
@@ -185,8 +199,10 @@ public class Defra {
 				} else {
 					//Check institution in MySQL DB (might be the one after dash)
 					try {
-						query = "SELECT * from "+dbname+".institution_data where institution_name regexp \""+institution_data__INSTITUTION_NAME.split(" - ")[1]+"\"";
-						result = MysqlConnect.sqlQuery(query,conn);
+						query = "SELECT * from  "+dbname+"institution_data where institution_name regexp ?;";
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, institution_data__INSTITUTION_NAME.split(" - ")[1]);
+						result = preparedStmt.executeQuery();
 						result.next();
 						institution_index__inst_id = result.getInt(1);
 					}

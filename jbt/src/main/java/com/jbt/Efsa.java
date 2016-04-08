@@ -6,6 +6,7 @@ import java.io.BufferedWriter;
 import java.io.StringWriter;
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -175,9 +176,13 @@ public class Efsa {
 								}
 								
 								//Check if project exists in DB
-								query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\"";
-								ResultSet result = MysqlConnect.sqlQuery(query,conn);
+								query = "SELECT PROJECT_NUMBER FROM  "+dbname+"project where PROJECT_NUMBER = ? and PROJECT_START_DATE = ?;";
+								ResultSet result =null;
 								try {
+									PreparedStatement preparedStmt = conn.prepareStatement(query);
+									preparedStmt.setString(1, project__PROJECT_NUMBER);
+									preparedStmt.setString(2, project__PROJECT_START_DATE);
+									result = preparedStmt.executeQuery();
 									result.next();
 									String number = result.getString(1);
 									continue;
@@ -226,9 +231,12 @@ public class Efsa {
 									institution_data__INSTITUTION_NAME = allMatches[0];
 									
 									//Check institution in MySQL DB
-									query = "SELECT * from "+dbname+".institution_data where institution_name like \""+institution_data__INSTITUTION_NAME+"\"";
-									result = MysqlConnect.sqlQuery(query,conn);
+									query = "SELECT * from  "+dbname+"institution_data where institution_name like ?;";
+									result = null;
 									try {
+										PreparedStatement preparedStmt = conn.prepareStatement(query);
+										preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+										result = preparedStmt.executeQuery();
 										result.next();
 										institution_index__inst_id = result.getInt(1);
 									}
@@ -258,10 +266,12 @@ public class Efsa {
 											}
 										}
 										institution_data__INSTITUTION_COUNTRY = WordUtils.capitalizeFully(allMatches[instCountryIndex]);
-										query = "SELECT * FROM "+dbname+".countries WHERE COUNTRY_NAME = \""
-												+institution_data__INSTITUTION_COUNTRY.trim()+"\"";
-										result = MysqlConnect.sqlQuery(query,conn);
+										query = "SELECT * FROM  "+dbname+"countries WHERE COUNTRY_NAME = ?";
+										result = null;
 										try {
+											PreparedStatement preparedStmt = conn.prepareStatement(query);
+											preparedStmt.setString(1, institution_data__INSTITUTION_COUNTRY.trim());
+											result = preparedStmt.executeQuery();
 											result.next();
 											institution_data__INSTITUTION_COUNTRY = result.getString(1);
 										}
@@ -271,8 +281,9 @@ public class Efsa {
 										}
 										if (Integer.valueOf(institution_data__INSTITUTION_COUNTRY) == 1) {
 											try {
-												query = "SELECT abbrv FROM "+dbname+".states";
-												result = MysqlConnect.sqlQuery(query,conn);
+												query = "SELECT abbrv FROM  "+dbname+"states";
+												PreparedStatement preparedStmt = conn.prepareStatement(query);
+												result = preparedStmt.executeQuery();
 												while (result.next()) {
 													String state = result.getString(1);
 													Pattern patState = Pattern.compile("("+state+")");

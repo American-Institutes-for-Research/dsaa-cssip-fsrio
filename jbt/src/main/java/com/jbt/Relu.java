@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URL;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -120,9 +121,12 @@ public class Relu {
 				try {
 					//Project number
 					project__PROJECT_NUMBER = finaldoc.select("th:containsOwn(Award:)").first().nextElementSibling().text();
-					query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\"";
-					ResultSet result = MysqlConnect.sqlQuery(query,conn);
+					query = "SELECT PROJECT_NUMBER FROM  "+dbname+"project where PROJECT_NUMBER = ?;";
+					ResultSet result =null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, project__PROJECT_NUMBER);
+						result = preparedStmt.executeQuery();
 						result.next();
 						String number = result.getString(1);
 						continue;
@@ -170,9 +174,11 @@ public class Relu {
 					}
 					
 					//Check institution in MySQL DB
-					query = "SELECT * from "+dbname+".institution_data where institution_name like \""+institution_data__INSTITUTION_NAME+"\"";
-					result = MysqlConnect.sqlQuery(query,conn);
+					query = "SELECT * from  "+dbname+"institution_data where institution_name like ?;";
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+						result = preparedStmt.executeQuery();
 						result.next();
 						institution_index__inst_id = result.getInt(1);
 						investigator_data__INSTITUTION = institution_index__inst_id;
@@ -192,16 +198,20 @@ public class Relu {
 						piName = piLastName+", "+piFirstName;
 
 						//Check PI name in MySQL DB
-						query = "SELECT * FROM "+dbname+".investigator_data where name like \""+piName+"\"";
-						result = MysqlConnect.sqlQuery(query,conn);
+						query = "SELECT * FROM  "+dbname+"investigator_data where name like ?;";
 						try {
+							PreparedStatement preparedStmt = conn.prepareStatement(query);
+							preparedStmt.setString(1, piName);
+							result = preparedStmt.executeQuery();
 							result.next();
 							investigator_index__inv_id = result.getInt(1);
 						}
 						catch (Exception e) {
-							query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-							result = MysqlConnect.sqlQuery(query,conn);
+							query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
 							try {
+								PreparedStatement preparedStmt = conn.prepareStatement(query);
+								preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));
+								result = preparedStmt.executeQuery();
 								result.next();
 								investigator_index__inv_id = result.getInt(1);
 							}
@@ -217,10 +227,16 @@ public class Relu {
 							investigator_data__name = piName;
 							
 							//Check if project exists in DB
-							query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-									+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-							result = MysqlConnect.sqlQuery(query,conn);
+							query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
+									+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
 							try {
+								PreparedStatement preparedStmt = conn.prepareStatement(query);
+								preparedStmt.setString(1, project__PROJECT_NUMBER);
+								preparedStmt.setString(2, project__PROJECT_START_DATE);
+								preparedStmt.setString(3, project__PROJECT_END_DATE);
+								preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
+								
+								result = preparedStmt.executeQuery();
 								result.next();
 								String number = result.getString(1);
 								continue;

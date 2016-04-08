@@ -80,12 +80,15 @@ public class upload {
 			investigator_index__inv_id = getPIid(record, institution_index__inst_id, conn, dbname);
 			
 			//Project number	
-			String query = "SELECT * FROM "+dbname+".project p left join "
-					+ dbname+".institution_index inst on inst.pid =  p.id left join "
-							+ dbname+".investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\" order by date_entered desc limit 1";
+			String query = "SELECT * FROM  "+dbname+".project p left join "
+					+ " "+dbname+".institution_index inst on inst.pid =  p.id left join "
+					+ "  "+dbname+".investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = ? "
+					+ " order by date_entered desc limit 1;";
 			ResultSet result = null;
 			try{
-				result = MysqlConnect.sqlQuery(query,conn);
+				PreparedStatement preparedStmt = conn.prepareStatement(query);
+				preparedStmt.setString(1, project__PROJECT_NUMBER);
+				result = preparedStmt.executeQuery();
 			}
 			catch(Exception e) {System.err.println(query);}
 			try {
@@ -125,20 +128,18 @@ public class upload {
 		// PI TABLE
 		Set<String> keys = PIS.keySet();
 		for(String s : keys) {
-			String delete = "DELETE FROM  "+dbname +".investigator_index WHERE pid= " + s;
 			ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
 			if(list == null) continue;
 			if(list.isEmpty()) continue;
 			Set<String> values = new HashSet<String>(list);  
 			for (String s2: values) {
-				String insertQuery = "INSERT INTO  "+dbname+".investigator_index (pid, inv_id)"
+				String insertQuery = "INSERT INTO   "+dbname+".investigator_index (pid, inv_id)"
 						+ " VALUES (?, ?);";
 				try {
 					PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
 					preparedStmt2.setString(1, s);
 					preparedStmt2.setString(2, s2);	
 					preparedStmt2.execute();
-					
 				}
 				catch (Exception e) {;}
 
@@ -149,13 +150,12 @@ public class upload {
 		//INSTITUTION TABLE
 		keys = INSTITUTIONS.keySet();
 		for(String s : keys) {
-			String delete = "DELETE FROM  "+dbname+".institution_index WHERE pid= " + s;
 			ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
 			if(list == null) continue;
 			if(list.isEmpty()) continue;
 			Set<String> values = new HashSet<String>(list);  
 			for (String s2: values) {
-				String insertQuery = "INSERT INTO  "+dbname+".institution_index (pid, inv_id)"
+				String insertQuery = "INSERT INTO   "+dbname+".institution_index (pid, inv_id)"
 						+ " VALUES (?, ?);";
 				try {
 					PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
@@ -173,7 +173,7 @@ public class upload {
 	}
 
 	public static void insertRecord(CSVRecord record, String institution_index__inst_id, String investigator_index__inv_id, Connection conn, String dbname) {
-		String insertQuery = "INSERT INTO  "+dbname+".project (PROJECT_NUMBER, PROJECT_TITLE, source_url, "
+		String insertQuery = "INSERT INTO   "+dbname+".project (PROJECT_NUMBER, PROJECT_TITLE, source_url, "
 				+ "PROJECT_START_DATE, PROJECT_END_DATE, PROJECT_FUNDING, PROJECT_TYPE, "
 				+ "PROJECT_KEYWORDS, PROJECT_IDENTIFIERS, PROJECT_COOPORATORS, PROJECT_ABSTRACT, "
 				+ "PROJECT_PUBLICATIONS, other_publications, PROJECT_MORE_INFO, PROJECT_OBJECTIVE,"
@@ -371,15 +371,14 @@ public class upload {
 		
 		
 		// Get the ID for the project just inserted
-		String query = "SELECT ID from "+dbname+".project order by ID desc limit 1";
+		String query = "SELECT ID from  "+dbname+".project order by ID desc limit 1;";
 		ResultSet result = null;
 		String ID = "";
 		try{
-			result = MysqlConnect.sqlQuery(query,conn);
+			PreparedStatement preparedStmt2 = conn.prepareStatement(query);
+			result = preparedStmt2.executeQuery();
 		}
 		catch(Exception e) {System.err.println(query);}
-		
-
 		try {
 			result.next();
 			ID = result.getString("ID");
@@ -390,26 +389,26 @@ public class upload {
 
 		
 		if (!investigator_index__inv_id.equals("-1")) {
-			insertQuery = "INSERT INTO "+dbname+".investigator_index (pid, inv_id)"
+			insertQuery = "INSERT INTO  "+dbname+".investigator_index (pid, inv_id)"
 					+ " VALUES (?, ?);";
 			try {
 				PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
 				preparedStmt2.setString(1, ID);
 				preparedStmt2.setString(2, investigator_index__inv_id);
-				preparedStmt2.execute();
+				preparedStmt2.executeQuery();
 			}
 			catch (Exception e) {;}
 
 		}
 		if (!institution_index__inst_id.equals("-1")) {
 			// Insert the new project into institution_index
-			insertQuery = "INSERT INTO " + dbname + ".institution_index (pid, inst_id)"
+			insertQuery = "INSERT INTO   "+dbname+".institution_index (pid, inst_id)"
 					+ " VALUES (?, ?);";
 			try {
 				PreparedStatement preparedStmt2 = conn.prepareStatement(insertQuery);
 				preparedStmt2.setString(1, ID);
 				preparedStmt2.setString(2, institution_index__inst_id);	
-				preparedStmt2.execute();
+				preparedStmt2.executeQuery();
 
 			}
 			catch (Exception e) {;}
@@ -427,13 +426,13 @@ public class upload {
 			id = result.getString("ID");
 		}
 		catch(Exception e) {;}
-		String updateQuery = "Update  "+dbname+".project SET PROJECT_TITLE= ?, source_url=?, "
+		String updateQuery = "Update   "+dbname+".project SET PROJECT_TITLE= ?, source_url=?, "
 				+ "PROJECT_START_DATE=?, PROJECT_END_DATE=?, PROJECT_FUNDING=?, PROJECT_TYPE=?, "
 				+ "PROJECT_KEYWORDS =?, PROJECT_IDENTIFIERS=?, PROJECT_COOPORATORS=?, PROJECT_ABSTRACT=?, "
 				+ "PROJECT_PUBLICATIONS=?, other_publications=?, PROJECT_MORE_INFO=?, PROJECT_OBJECTIVE=?,"
 				+ "PROJECT_ACCESSION_NUMBER=?, ACTIVITY_STATUS=?, DATE_ENTERED=?, COMMENTS=?, AUTO_INDEX_QA=?,"
 				+ "archive=?,LAST_UPDATE=?,  LAST_UPDATE_BY=? where ID = "
-				+ "\"" + id + "\";";
+				+ "?;";
 		String PROJECT_NUMBER = record.get("project__PROJECT_NUMBER");
 		String PROJECT_TITLE = null;
 		String source_url = "";
@@ -610,7 +609,7 @@ public class upload {
 			preparedStmt.setString(20, archive);
 			preparedStmt.setString(21, LAST_UPDATE);	
 			preparedStmt.setString(22, LAST_UPDATE_BY);
-
+			preparedStmt.setString(23, id);
 			preparedStmt.execute();
 		}
 		catch (Exception e) {;}		
@@ -629,9 +628,10 @@ public class upload {
 		// Let's make sure this institution definitely doesn't exist:
 		// Get all institutions
 		ResultSet institutes = null;
-		String GetInsts = "SELECT ID, INSTITUTION_NAME FROM  "+dbname+".institution_data";
+		String GetInsts = "SELECT ID, INSTITUTION_NAME FROM   "+dbname+".institution_data;";
 		try {
-			institutes = MysqlConnect.sqlQuery(GetInsts, conn);
+			PreparedStatement preparedStmt = conn.prepareStatement(GetInsts);
+			institutes = preparedStmt.executeQuery();
 
 		}
 		catch (Exception e) {System.err.println(GetInsts);}
@@ -741,7 +741,7 @@ public class upload {
 		}
 		catch(Exception e) {;}
 
-		String insertQuery = "INSERT INTO institution_data (INSTITUTION_NAME, INSTITUTION_DEPARTMENT, INSTITUTION_ADDRESS1, "
+		String insertQuery = "INSERT INTO  "+dbname+".institution_data (INSTITUTION_NAME, INSTITUTION_DEPARTMENT, INSTITUTION_ADDRESS1, "
 				+ "INSTITUTION_ADDRESS2, INSTITUTION_CITY, INSTITUTION_COUNTRY, INSTITUTION_STATE, "
 				+ "INSTITUTION_ZIP, DATE_ENTERED, COMMENTS, INSTITUTION_URL) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 		try {
@@ -757,16 +757,16 @@ public class upload {
 			preparedStmt.setString(9, DATE_ENTERED);
 			preparedStmt.setString(10, COMMENTS);	
 			preparedStmt.setString(11, INSTITUTION_URL);	
-
 			preparedStmt.execute();
 		}
 		catch (Exception e) {;}		
 
-		String getID = " SELECT ID FROM "+dbname+".institution_data WHERE INSTITUTION_NAME = \"" +  record.get("institution_data__INSTITUTION_NAME") + "\";";
+		String getID = " SELECT ID FROM  "+dbname+".institution_data WHERE INSTITUTION_NAME = ?;";
 		ResultSet ID =null;
-				
 		try {
-			ID = MysqlConnect.sqlQuery(getID, conn);
+			PreparedStatement preparedStmt2 = conn.prepareStatement(getID);
+			preparedStmt2.setString(1, record.get("institution_data__INSTITUTION_NAME"));	
+			ID = preparedStmt2.executeQuery();
 		}
 		catch(Exception e) {
 			System.err.println(getID);
@@ -794,13 +794,22 @@ public class upload {
 		catch(Exception e) {;}
 		if (investigator_data__name.equals("")) return "-1";
 		String query = "";
-		if (!institution_index__inst_id.equalsIgnoreCase("-1"))
-			query = "SELECT ID, name FROM  "+dbname+".investigator_data where INSTITUTION = \""+institution_index__inst_id+"\"";
-		else 
-			query = "SELECT ID, name FROM  "+dbname+".investigator_data;";
+		if (!institution_index__inst_id.equalsIgnoreCase("-1")) {
+			query = "SELECT ID, name FROM   "+dbname+".investigator_data where INSTITUTION = ?;";
+			
+		}
+			
+		else {
+			query = "SELECT ID, name FROM   "+dbname+".investigator_data where INSTITUTION != ?;";
+		}
+			
+		
+
 		ResultSet pis = null;
 		try {
-			pis = MysqlConnect.sqlQuery(query,conn);
+			PreparedStatement preparedStmt = conn.prepareStatement(query);
+			preparedStmt.setString(1, institution_index__inst_id);
+			pis = preparedStmt.executeQuery();
 		}
 		catch(Exception e) {System.err.println(query);}
 		String finalID = "";
@@ -857,17 +866,18 @@ public class upload {
 			preparedStmt.setString(3, PHONE_NUMBER);
 			preparedStmt.setString(4, INSTITUTION);
 			preparedStmt.setString(5, DATE_ENTERED);
-
 			preparedStmt.execute();
 			
 		}
 		catch (Exception e) {;}		
 
-		String getID = "SELECT ID FROM "+dbname+ ".investigator_data WHERE name = \"" +  name  
-				+ "\" and INSTITUTION = " + INSTITUTION + ";";
+		String getID = "SELECT ID FROM  "+dbname+".investigator_data WHERE name = ? and INSTITUTION = ?;";
 		ResultSet ID =null;
 		try {
-			ID = MysqlConnect.sqlQuery(getID, conn);
+			PreparedStatement preparedStmt = conn.prepareStatement(getID);
+			preparedStmt.setString(1, name);
+			preparedStmt.setString(2, INSTITUTION);
+			ID = preparedStmt.executeQuery();
 
 		}
 		catch (Exception e) {System.err.println(getID);}

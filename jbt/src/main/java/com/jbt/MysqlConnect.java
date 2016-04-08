@@ -36,51 +36,6 @@ public class MysqlConnect {
             // handle the error
         }
         return conn;
-    }
-
-	public static ResultSet sqlQuery(String query, Connection conn) {
-		Statement stmt = null;
-		ResultSet rs = null;
-		try {
-		    stmt = conn.createStatement();
-		    rs = stmt.executeQuery(query);		    
-		    
-		    // Now do something with the ResultSet ....
-		}
-		catch (SQLException ex){
-		    // handle any errors
-		    
-		    //System.out.println("SQLState: " + ex.getSQLState());
-		    //System.out.println("VendorError: " + ex.getErrorCode());
-		    System.out.println("SQL Exception: Please contact NAL IT to handle this error. It means that the database connection has not been established properly. Additional information is below.");
-		      System.out.println("SQLException: " + ex.getMessage());
-        }
-		
-		return rs;
-		
-	}
-	
-	public static ResultSet sqlQuery(String query, Connection conn, String host, String user) {
-		Statement stmt = null;
-		ResultSet rs = null;
-		try {
-		    stmt = conn.createStatement();
-		    rs = stmt.executeQuery(query);		    
-		    
-		    // Now do something with the ResultSet ....
-		}
-		catch (SQLException ex){
-		    // handle any errors
-		    
-		    //System.out.println("SQLState: " + ex.getSQLState());
-		    //System.out.println("VendorError: " + ex.getErrorCode());
-		    System.out.println("SQL Exception: Please contact NAL IT to handle this error. It means that the database connection has not been established properly. Additional information is below.");
-		      System.out.println("SQLException: " + ex.getMessage());
-        }
-		
-		return rs;
-		
-	}
-	
+    }	
 	
 }

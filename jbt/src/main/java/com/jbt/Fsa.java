@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -158,10 +159,15 @@ public class Fsa {
 	        				}
 	        				
 	        				//Check if project exists in DB
-	    					query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-	    							+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-	    					ResultSet result = MysqlConnect.sqlQuery(query,conn);
+	    					query = "SELECT PROJECT_NUMBER FROM  "+dbname+"project where PROJECT_NUMBER = ?"
+	    							+ " and PROJECT_START_DATE = ? and PROJECT_END_DATE = ?";
+	    					ResultSet result = null;
 	    					try {
+	    						PreparedStatement preparedStmt = conn.prepareStatement(query);
+	    						preparedStmt.setString(1, project__PROJECT_NUMBER);
+	    						preparedStmt.setString(2, project__PROJECT_START_DATE);
+	    						preparedStmt.setString(3, project__PROJECT_END_DATE);
+	    						result= preparedStmt.executeQuery();
 	    						result.next();
 	    						String number = result.getString(1);
 	    						continue;
@@ -192,9 +198,12 @@ public class Fsa {
 		        					}
 	        					}
 	        					//Check institution in MySQL DB
-								query = "SELECT * from "+dbname+".institution_data where institution_name like \""+institution_data__INSTITUTION_NAME+"\"";
-								result = MysqlConnect.sqlQuery(query,conn);
+								query = "SELECT * from  "+dbname+"institution_data where institution_name like ?";
+								result = null;
 								try {
+									PreparedStatement preparedStmt = conn.prepareStatement(query);
+		    						preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+		    						result= preparedStmt.executeQuery();
 									result.next();
 									institution_index__inst_id = result.getInt(1);
 								}

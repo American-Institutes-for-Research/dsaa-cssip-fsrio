@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -80,18 +81,18 @@ public class AHDB {
 				try {
 					AHDB.potatoes(outfolder, link,conn, dbname);
 				} catch (Exception ex) {
-					System.out.println("Warning: The AHDB potatoes scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					System.out.println("Warning: The AHDB potatoes scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:");
 					ex.printStackTrace();
-					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
 				}
 			}
 			if (link.replace("horticulture", "").length() < link.length()) {
 				try {
 				AHDB.horticulture(outfolder, link,conn,dbname);
 				} catch (Exception ex) {
-					System.out.println("Warning: The AHDB horticulture scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					System.out.println("Warning: The AHDB horticulture scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:");
 					ex.printStackTrace();
-					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
 				}
 
 			}
@@ -99,9 +100,9 @@ public class AHDB {
 				try {
 				AHDB.dairy(outfolder, link,conn,dbname);
 				} catch (Exception ex) {
-					System.out.println("Warning: The AHDB dairy scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					System.out.println("Warning: The AHDB dairy scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:");
 					ex.printStackTrace();
-					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
 				}
 
 			}
@@ -109,9 +110,9 @@ public class AHDB {
 				try {
 				AHDB.meat(outfolder, link,conn,dbname,logfile);
 				} catch (Exception ex) {
-					System.out.println("Warning: The AHDB beef and lamb scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					System.out.println("Warning: The AHDB beef and lamb scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:");
 					ex.printStackTrace();
-					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
 				}
 
 			}
@@ -119,9 +120,9 @@ public class AHDB {
 				try {
 				AHDB.cereals(outfolder, link,conn,dbname,logfile);
 				} catch (Exception ex) {
-					System.out.println("Warning: The AHDB cereals scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					System.out.println("Warning: The AHDB cereals scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:");
 					ex.printStackTrace();
-					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
 				}
 
 			}
@@ -129,9 +130,9 @@ public class AHDB {
 				try {
 				AHDB.pork(outfolder,link,conn,dbname);
 				} catch (Exception ex) {
-					System.out.println("Warning: The AHDB pork scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:")
+					System.out.println("Warning: The AHDB pork scraper did not succeed. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:");
 					ex.printStackTrace();
-					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+					System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
 				}
 
 			}
@@ -275,22 +276,28 @@ public class AHDB {
 				* This is exactly what the following MySQL queries are doing.
 				*/
 				
-				String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
+				String GetInvestigatorSQL = "SELECT ID FROM  "+dbname+"investigator_data WHERE NAME LIKE ?;";
 				/**
 				* Check if investigator exists in the current FSRIO Research Projects Database.
 				* Exception is implemented to try different variants because of spelling mistakes possible in PI names.
 				* The last Exception except here needs to be ignored because by default we assume that the PI does not exist in the database and assign -1 index.
 				*/
 				
-				ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
+				ResultSet rs6 = null;
 				try {
+					PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
+					preparedStmt.setString(1, investigator_data__name);
+					rs6 = preparedStmt.executeQuery();
 					rs6.next();
 					investigator_index__inv_id = rs6.getInt(1);
 				}
 				catch (Exception e) {
-					String query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					ResultSet result = MysqlConnect.sqlQuery(query,conn);
+					String query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
+					ResultSet result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));
+						result = preparedStmt.executeQuery();
 						result.next();
 						investigator_index__inv_id = result.getInt(1);
 					}
@@ -307,10 +314,18 @@ public class AHDB {
 					/**
 					* Check if project exists in DB
 					*/
-					String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					ResultSet result = MysqlConnect.sqlQuery(query,conn);
+					String query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
+							+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
+					ResultSet result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						
+						preparedStmt.setString(1, project__PROJECT_NUMBER);
+						preparedStmt.setString(2, project__PROJECT_START_DATE); 
+						preparedStmt.setString(3, project__PROJECT_END_DATE); 
+						preparedStmt.setString(4, String.valueOf(investigator_index__inv_id)); 
+
+						result = preparedStmt.executeQuery();
 						result.next();
 						String number = result.getString(1);
 						continue;
@@ -335,9 +350,13 @@ public class AHDB {
 					* By default we assume that it does not exist in the DB. 
 					* (Exception e) adds a comment to output spreadsheet because some institution fields are not present at the web page but FSRIO might want to retrieve additional information from elsewhere on the Internet.
 					*/
-					String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
+					String GetInstIDsql = "SELECT ID FROM  "+dbname+"institution_data WHERE INSTITUTION_NAME LIKE ?;";
+					ResultSet rs = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
+						preparedStmt.setString(1, institution_data__INSTITUTION_NAME); 
+						rs = preparedStmt.executeQuery();
+
 						rs.next();
 						institution_index__inst_id = rs.getInt(1);
 					}
@@ -524,14 +543,17 @@ public class AHDB {
 				* This is exactly what the following MySQL queries are doing.
 				*/
 				
-				String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
+				String GetInstIDsql = "SELECT ID FROM  "+dbname+"institution_data WHERE INSTITUTION_NAME LIKE ?;";
 				/** 
 				* Check if institution exists in DB
 				* By default we assume that it does not exist in the DB. 
 				* (Exception e) adds a comment to output spreadsheet because some institution fields are not present at the web page but FSRIO might want to retrieve additional information from elsewhere on the Internet.
 				*/
-				ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
+				ResultSet rs = null;
 				try {
+					PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
+					preparedStmt.setString(1, investigator_data__name);
+					rs = preparedStmt.executeQuery();
 					rs.next();
 					institution_index__inst_id = rs.getInt(1);
 				}
@@ -544,16 +566,22 @@ public class AHDB {
 				* Exception is implemented to try different variants because of spelling mistakes possible in PI names.
 				* The last Exception except here needs to be ignored because by default we assume that the PI does not exist in the database and assign -1 index.
 				*/
-				String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-				ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
+				String GetInvestigatorSQL = "SELECT ID FROM  "+dbname+"investigator_data WHERE NAME LIKE ?;";
+				ResultSet rs6 = null;
 				try {
+					PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
+					preparedStmt.setString(1, investigator_data__name);
+					rs6 = preparedStmt.executeQuery();
 					rs6.next();
 					investigator_index__inv_id = rs6.getInt(1);
 				}
 				catch (Exception e) {
-					String query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					ResultSet result = MysqlConnect.sqlQuery(query,conn);
+					String query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
+					ResultSet result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));
+						result = preparedStmt.executeQuery();
 						result.next();
 						investigator_index__inv_id = result.getInt(1);
 					}
@@ -569,10 +597,17 @@ public class AHDB {
 					/**
 					* Check if project exists in DB. Again, exception needs to be ignored.
 					*/
-					String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					ResultSet result = MysqlConnect.sqlQuery(query,conn);
+					String query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
+							+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
+					ResultSet result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						
+						preparedStmt.setString(1, project__PROJECT_NUMBER);
+						preparedStmt.setString(2, project__PROJECT_START_DATE);
+						preparedStmt.setString(3, project__PROJECT_END_DATE);
+						preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
+						result = preparedStmt.executeQuery();
 						result.next();
 						String number = result.getString(1);
 						continue;
@@ -706,9 +741,12 @@ public class AHDB {
 			project__DATE_ENTERED = dateFormatEnter.format(current);
 			
 			// Find institution
-			String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-			ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
+			String GetInstIDsql = "SELECT ID FROM  "+dbname+"institution_data WHERE INSTITUTION_NAME LIKE ?;";
+			ResultSet rs = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
+				preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+				rs = preparedStmt.executeQuery();
 				rs.next();
 				institution_index__inst_id = rs.getInt(1);
 			}
@@ -717,10 +755,16 @@ public class AHDB {
 			}
 
 			//Check if project exists in DB
-			String query = "SELECT PROJECT_TITLE FROM "+dbname+".project where PROJECT_TITLE = \""+project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," ")+"\""
-					+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-			ResultSet result = MysqlConnect.sqlQuery(query,conn);
+			String query = "SELECT PROJECT_TITLE FROM  "+dbname+"project where PROJECT_TITLE = ?"
+					+ " and PROJECT_START_DATE = ? and PROJECT_END_DATE = ?";
+			ResultSet result = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(query);
+				preparedStmt.setString(1, project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," "));
+				preparedStmt.setString(2, project__PROJECT_START_DATE);
+				preparedStmt.setString(3, project__PROJECT_END_DATE);
+
+				result = preparedStmt.executeQuery();
 				result.next();
 				String number = result.getString(1);
 				continue;
@@ -862,9 +906,12 @@ public class AHDB {
 					}
 					
 					// Find institution
-					String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
+					String GetInstIDsql = "SELECT ID FROM  "+dbname+"institution_data WHERE INSTITUTION_NAME LIKE ?;";
+					ResultSet rs = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
+						preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+						rs = preparedStmt.executeQuery();
 						rs.next();
 						institution_index__inst_id = rs.getInt(1);
 					}
@@ -873,10 +920,15 @@ public class AHDB {
 					}
 
 					//Check if project exists in DB
-					String query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-							+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-					ResultSet result = MysqlConnect.sqlQuery(query,conn);
+					String query = "SELECT PROJECT_NUMBER FROM  "+dbname+"project where PROJECT_NUMBER = ?"
+							+ " and PROJECT_START_DATE = ? and PROJECT_END_DATE = ?;";
+					ResultSet result =null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, project__PROJECT_NUMBER);
+						preparedStmt.setString(2, project__PROJECT_START_DATE);
+						preparedStmt.setString(3, project__PROJECT_END_DATE);
+						result = preparedStmt.executeQuery();
 						result.next();
 						String number = result.getString(1);
 						continue;
@@ -1077,9 +1129,12 @@ public class AHDB {
 				
 				
 				// Find institution in DB
-				String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-				ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
+				String GetInstIDsql = "SELECT ID FROM  "+dbname+"institution_data WHERE INSTITUTION_NAME LIKE ?;";
+				ResultSet rs = null;
 				try {
+					PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
+					preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+					rs = preparedStmt.executeQuery();
 					rs.next();
 					institution_index__inst_id = rs.getInt(1);
 				}
@@ -1089,16 +1144,22 @@ public class AHDB {
 
 				if (!investigator_data__name.equals("")) {
 					//Find investigator
-					String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-					ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
+					String GetInvestigatorSQL = "SELECT ID FROM  "+dbname+"investigator_data WHERE NAME LIKE ?;";
+					ResultSet rs6 = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
+						preparedStmt.setString(1, investigator_data__name);
+						rs6 = preparedStmt.executeQuery();
 						rs6.next();
 						investigator_index__inv_id = rs6.getInt(1);
 					}
 					catch (Exception e) {
-						String query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+lastName+", "+firstName.substring(0,1)+"\"";
-						ResultSet result = MysqlConnect.sqlQuery(query,conn);
+						String query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
+						ResultSet result = null;
 						try {
+							PreparedStatement preparedStmt = conn.prepareStatement(query);
+							preparedStmt.setString(1, lastName+", "+firstName.substring(0,1));
+							result = preparedStmt.executeQuery();
 							result.next();
 							investigator_index__inv_id = result.getInt(1);
 						}
@@ -1118,10 +1179,16 @@ public class AHDB {
 				} else {
 
 					//Check if project exists in DB
-					String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					ResultSet result = MysqlConnect.sqlQuery(query,conn);
+					String query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
+							+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE =  ? and ii.inv_id = ?;";
+					ResultSet result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, project__PROJECT_NUMBER);
+						preparedStmt.setString(2, project__PROJECT_START_DATE);
+						preparedStmt.setString(3, project__PROJECT_END_DATE);
+						preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
+						result = preparedStmt.executeQuery();
 						result.next();
 						String number = result.getString(1);
 						continue;
@@ -1225,9 +1292,12 @@ public class AHDB {
 			catch(Exception e) {;}
 			
 			// Get institution Id, if exists
-			String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME LIKE \"" +  institution_data__INSTITUTION_NAME + "\";";
-			ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql, conn);
+			String GetInstIDsql = "SELECT ID FROM  "+dbname+"institution_data WHERE INSTITUTION_NAME LIKE ?;";
+			ResultSet rs = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
+				preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+				rs = preparedStmt.executeQuery();
 				rs.next();
 				institution_index__inst_id = rs.getInt(1);
 			}
@@ -1236,9 +1306,12 @@ public class AHDB {
 			}
 
 			// See if PI exists.
-			String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-			ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
+			String GetInvestigatorSQL = "SELECT ID FROM  "+dbname+"investigator_data WHERE NAME LIKE ?;";
+			ResultSet rs6 = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
+				preparedStmt.setString(1, investigator_data__name);
+				rs6 = preparedStmt.executeQuery();
 				rs6.next();
 				investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
 			}
@@ -1247,10 +1320,15 @@ public class AHDB {
 			}
 
 			//Check if project exists in DB
-			String query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-					+ " and PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\"";
-			ResultSet result = MysqlConnect.sqlQuery(query,conn);
+			String query = "SELECT PROJECT_NUMBER FROM  "+dbname+"project where PROJECT_NUMBER = ?"
+					+ " and PROJECT_START_DATE =  ? and PROJECT_END_DATE = /;";
+			ResultSet result = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
+				preparedStmt.setString(1, project__PROJECT_NUMBER);
+				preparedStmt.setString(2, project__PROJECT_START_DATE);
+				preparedStmt.setString(3, project__PROJECT_END_DATE);
+				result = preparedStmt.executeQuery();
 				result.next();
 				String number = result.getString(1);
 				continue;

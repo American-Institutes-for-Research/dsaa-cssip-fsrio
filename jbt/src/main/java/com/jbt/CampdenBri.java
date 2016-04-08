@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -38,9 +39,9 @@ public class CampdenBri {
 		try {
 		CampdenBri.scrapeV2(links,outfolder,conn,dbname);
 		} catch (Exception ex) {
-			System.out.println("Warning: The scraper did not succeed. This error has not been seen before. Please share the following information with the IT support to troubleshoot:")
+			System.out.println("Warning: The scraper did not succeed. This error has not been seen before. Please share the following information with the IT support to troubleshoot:");
 			ex.printStackTrace();
-			System.out.println("***We recommend that you re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+			System.out.println("***We recommend that you re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
 		}
 
 		/* These links2 are not part of current FSRIO approach but perhaps Campden BRI changed their website
@@ -48,8 +49,9 @@ public class CampdenBri {
 		try {
 		CampdenBri.scrapeV1(links2,outfolder,conn,dbname);
 		} catch (Exception ex) {
-			System.out.println("Warning: The scraper did not succeed. This error has not been seen before. Please share the following information with the IT support to troubleshoot:")				ex.printStackTrace();
-			System.out.println("***We recommend that you re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.")
+			System.out.println("Warning: The scraper did not succeed. This error has not been seen before. Please share the following information with the IT support to troubleshoot:");
+			ex.printStackTrace();
+			System.out.println("***We recommend that you re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
 		}
 
 		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
@@ -194,16 +196,22 @@ public class CampdenBri {
 				
 				
 				//Check PI name in MySQL DB
-				query = "SELECT * FROM "+dbname+".investigator_data where name like \""+piName+"\"";
-				ResultSet result = MysqlConnect.sqlQuery(query,conn);
+				query = "SELECT * FROM  "+dbname+"investigator_data where name like ?;";
+				ResultSet result = null;
 				try {
+					PreparedStatement preparedStmt = conn.prepareStatement(query);
+					preparedStmt.setString(1, piName);
+					result = preparedStmt.executeQuery();
 					result.next();
 					investigator_index__inv_id = result.getInt(1);
 				}
 				catch (Exception e) {
-					query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn);
+					query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
+					result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));
+						result = preparedStmt.executeQuery();
 						result.next();
 						investigator_index__inv_id = result.getInt(1);
 					}
@@ -218,10 +226,17 @@ public class CampdenBri {
 				} else {
 				
 					investigator_data__name = piName;
-					query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn);
+					query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ? "
+							+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
+					result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						
+						preparedStmt.setString(1, project__PROJECT_NUMBER);
+						preparedStmt.setString(2, project__PROJECT_START_DATE);
+						preparedStmt.setString(3, project__PROJECT_END_DATE);
+						preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
+						result = preparedStmt.executeQuery();
 						result.next();
 						String number = result.getString(1);
 						continue;
@@ -392,16 +407,22 @@ public class CampdenBri {
 			if (project__PROJECT_NUMBER != "tbc") {
 				
 				//Check PI name in MySQL DB
-				query = "SELECT * FROM "+dbname+".investigator_data where name like \""+piName+"\"";
-				ResultSet result = MysqlConnect.sqlQuery(query,conn);
+				query = "SELECT * FROM  "+dbname+"investigator_data where name like ?;";
+				ResultSet result = null;
 				try {
+					PreparedStatement preparedStmt = conn.prepareStatement(query);
+					preparedStmt.setString(1, piName);					
+					result = preparedStmt.executeQuery();
 					result.next();
 					investigator_index__inv_id = result.getInt(1);
 				}
 				catch (Exception e) {
-					query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn);
+					query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
+					result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));					
+						result = preparedStmt.executeQuery();
 						result.next();
 						investigator_index__inv_id = result.getInt(1);
 					}
@@ -418,10 +439,16 @@ public class CampdenBri {
 					investigator_data__name = piName;
 					
 					//Check if project exists in DB
-					query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-							+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-					result = MysqlConnect.sqlQuery(query,conn);
+					query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ? "
+							+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
+					result = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(query);
+						preparedStmt.setString(1, project__PROJECT_NUMBER);
+						preparedStmt.setString(2, project__PROJECT_START_DATE);
+						preparedStmt.setString(3, project__PROJECT_END_DATE);
+						preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
+						result = preparedStmt.executeQuery();
 						result.next();
 						String number = result.getString(1);
 						continue;

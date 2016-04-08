@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -130,15 +131,18 @@ public class Esrc {
 			
 			//Check in DB whether PI exists
 			String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-			ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
+			ResultSet rs6 = null;
 			try {
 				rs6.next();
 				investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
 			}
 			catch (Exception e) {
-				query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+piLastName+", "+piFirstName.substring(0,1)+"\"";
-				ResultSet result = MysqlConnect.sqlQuery(query,conn);
+				query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
+				ResultSet result = null;
 				try {
+					PreparedStatement preparedStmt = conn.prepareStatement(query);
+					preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));
+					result= preparedStmt.executeQuery();
 					result.next();
 					investigator_index__inv_id = result.getInt(1);
 				}
@@ -146,9 +150,12 @@ public class Esrc {
 			}
 
 			//Project number check within DB	
-			query = "SELECT PROJECT_NUMBER FROM "+dbname+".project where PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\"";
-			ResultSet result = MysqlConnect.sqlQuery(query,conn);
+			query = "SELECT PROJECT_NUMBER FROM  "+dbname+"project where PROJECT_NUMBER = ?";
+			ResultSet result = null;
 			try {
+				PreparedStatement preparedStmt = conn.prepareStatement(query);
+				preparedStmt.setString(1, project__PROJECT_NUMBER);
+				result= preparedStmt.executeQuery();
 				result.next();
 				String number = result.getString(1);
 				continue;
@@ -160,10 +167,16 @@ public class Esrc {
 				
 			} else {
 				//Check if project exists in DB
-				query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-						+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-				result = MysqlConnect.sqlQuery(query,conn);
+				query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
+						+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
+				result = null;
 				try {
+					PreparedStatement preparedStmt = conn.prepareStatement(query);
+					preparedStmt.setString(1, project__PROJECT_NUMBER);
+					preparedStmt.setString(2, project__PROJECT_START_DATE);
+					preparedStmt.setString(3, project__PROJECT_END_DATE);
+					preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
+					result= preparedStmt.executeQuery();
 					result.next();
 					String number = result.getString(1);
 					continue;

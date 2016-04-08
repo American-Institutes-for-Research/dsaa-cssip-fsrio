@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -202,9 +203,12 @@ public class NSF {
 		
 					// See if the institution ID exists, if not make it -1 to reflect we need to add.
 					int institution_index__inst_id = -1; 
-					String GetInstIDsql = "SELECT ID FROM " + dbname + ".institution_data WHERE INSTITUTION_NAME = \"" +  institution_data__INSTITUTION_NAME + "\";";
-					ResultSet rs = MysqlConnect.sqlQuery(GetInstIDsql,conn);
+					String GetInstIDsql = "SELECT ID FROM  "+dbname+"institution_data WHERE INSTITUTION_NAME = ?;";
+					ResultSet rs = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
+						preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
+						rs = preparedStmt.executeQuery();
 						rs.next();
 						institution_index__inst_id = Integer.parseInt(rs.getString(1));
 					}
@@ -215,9 +219,12 @@ public class NSF {
 		
 					// See if the country ID exists, if not make it -1 to reflect we need to add.
 					int institution_data__INSTITUTION_COUNTRY = -1; 
-					String GetcountryIDsql = "SELECT ID FROM " + dbname + ".countries WHERE COUNTRY_NAME = \"" +  countries__COUNTRY_NAME.trim() + "\";";
-					ResultSet rs2 = MysqlConnect.sqlQuery(GetcountryIDsql,conn);
+					String GetcountryIDsql = "SELECT ID FROM  "+dbname+"countries WHERE COUNTRY_NAME = ?;";
+					ResultSet rs2 = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(GetcountryIDsql);
+						preparedStmt.setString(1, countries__COUNTRY_NAME.trim());
+						rs2 = preparedStmt.executeQuery();
 						rs2.next();
 						institution_data__INSTITUTION_COUNTRY = Integer.parseInt(rs2.getString(1));
 					}
@@ -227,9 +234,12 @@ public class NSF {
 		
 					// See if the state ID exists, if not make it -1 to reflect we need to add.
 					int institution_data__INSTITUTION_STATE = -1; 
-					String GetstateIDsql = "SELECT ID FROM " + dbname + ".states WHERE abbrv = \"" +  states__states_abbrv + "\";";
-					ResultSet rs3 = MysqlConnect.sqlQuery(GetstateIDsql,conn);
+					String GetstateIDsql = "SELECT ID FROM  "+dbname+"states WHERE abbrv = ?;";
+					ResultSet rs3 = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(GetstateIDsql);
+						preparedStmt.setString(1, states__states_abbrv);
+						rs3 = preparedStmt.executeQuery();
 						rs3.next();
 						institution_data__INSTITUTION_STATE = Integer.parseInt(rs3.getString(1));
 					}
@@ -244,9 +254,12 @@ public class NSF {
 					}
 					else {
 						// Checking to see if project type exists in projecttype table.
-						String GetProjectTypeIDSQL = "SELECT ID FROM " + dbname + ".projecttype WHERE NAME LIKE \"" +  project_awardInstrument + "\";";
-						ResultSet rs4 = MysqlConnect.sqlQuery(GetstateIDsql,conn);
+						String GetProjectTypeIDSQL = "SELECT ID FROM  "+dbname+"projecttype WHERE NAME LIKE ?;";
+						ResultSet rs4 = null;
 						try {
+							PreparedStatement preparedStmt = conn.prepareStatement(GetProjectTypeIDSQL);
+							preparedStmt.setString(1, project_awardInstrument);
+							rs4 = preparedStmt.executeQuery();
 							rs4.next();
 							projecttype__ID = Integer.parseInt(rs4.getString(1));
 						}
@@ -260,23 +273,32 @@ public class NSF {
 					// Condition: investigator must belong to the same institution that we just parsed.
 					// We first use email, then name.
 					int investigator_index__inv_id = -1;
-					String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE EMAIL_ADDRESS LIKE \"" +  investigator_data__EMAIL_ADDRESS + "\";";
-					ResultSet rs5 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
+					String GetInvestigatorSQL = "SELECT ID FROM  "+dbname+"investigator_data WHERE EMAIL_ADDRESS LIKE ?;";
+					ResultSet rs5 = null;
 					try {
+						PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
+						preparedStmt.setString(1, investigator_data__EMAIL_ADDRESS);
+						rs5 = preparedStmt.executeQuery();
 						rs5.next();
 						investigator_index__inv_id = Integer.parseInt(rs5.getString(1));
 					}
 					catch (Exception e) {
-						GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-						ResultSet rs6 = MysqlConnect.sqlQuery(GetInvestigatorSQL,conn);
+						GetInvestigatorSQL = "SELECT ID FROM  "+dbname+"investigator_data WHERE NAME LIKE ?;";
+						ResultSet rs6 = null;
 						try {
+							PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
+							preparedStmt.setString(1, investigator_data__name);
+							rs6 = preparedStmt.executeQuery();
 							rs6.next();
 							investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
 						}
 						catch (Exception ee) {
-							String query = "SELECT * FROM "+dbname+".investigator_data where name regexp \"^"+LastName+", "+FirstName.substring(0,1)+"\"";
-							ResultSet result = MysqlConnect.sqlQuery(query,conn);
+							String query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
+							ResultSet result = null;
 							try {
+								PreparedStatement preparedStmt = conn.prepareStatement(query);
+								preparedStmt.setString(1, LastName+", "+FirstName.substring(0,1));
+								result = preparedStmt.executeQuery();
 								result.next();
 								investigator_index__inv_id = result.getInt(1);
 							}
@@ -290,10 +312,16 @@ public class NSF {
 					} else {
 
 						//Check if project exists in DB
-						String query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p left outer join "+dbname+".investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = \""+project__PROJECT_NUMBER+"\""
-								+ " and p.PROJECT_START_DATE = \""+project__PROJECT_START_DATE+"\" and p.PROJECT_END_DATE = \""+project__PROJECT_END_DATE+"\" and ii.inv_id = \""+String.valueOf(investigator_index__inv_id)+"\"";
-						ResultSet result = MysqlConnect.sqlQuery(query,conn);
+						String query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
+								+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?";
+						ResultSet result = null;
 						try {
+							PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
+							preparedStmt.setString(1, project__PROJECT_NUMBER);
+							preparedStmt.setString(2, project__PROJECT_START_DATE);
+							preparedStmt.setString(3, project__PROJECT_END_DATE);
+							preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
+							result = preparedStmt.executeQuery();
 							result.next();
 							String number = result.getString(1);
 							continue;
