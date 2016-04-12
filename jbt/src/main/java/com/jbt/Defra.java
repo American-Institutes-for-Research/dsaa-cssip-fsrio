@@ -29,7 +29,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.opencsv.CSVWriter;
 
 /**
-* This class scrapes the website associated with Campden BRI.
+* This class scrapes the website associated with the UK Department for Environment, Food and Rural Affairs (DEFRA).
 * Returns String "DEFRA" when done. The class writes output directly into the tab-separate spreadsheet for review and quality control.
 * Utilizes the links provided by FSRIO and requires several parameters specified in the main Run class.
 */

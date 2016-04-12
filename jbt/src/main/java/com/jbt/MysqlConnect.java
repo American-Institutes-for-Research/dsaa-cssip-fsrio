@@ -6,6 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MysqlConnect {
 	public static Connection connection(String host, String user, String passwd) {
@@ -81,7 +83,7 @@ public class MysqlConnect {
 	* @param	institution_index__inst_id	Institution ID that exists in the institution_data and institution_index tables of the FSRIO Research Projects Database. By default, it is -1 if the institution name does not exist in the FSRIO DB. Some data sources do not have any institution-related information.
 	* @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
 	* @param	institution_data__INSTITUTION_NAME	Full institution name on individual projects.
-	* @param	comment	This is a customized string that is written as a commentary to output tab-separated file and serves the purpose of informing FSRIO staff that some additional information can be available elsewhere on the Internet and can be added here.
+	*
 	* @return	institution_index__inst_id	By default, it will be -1 in case the institution name does not exist in the current FSRIO Database. It will update accordingly if MySQL finds within the DB.
 	*/
     public static Integer GetInstitutionSQL(String dbname, Integer institution_index__inst_id, Connection conn, String institution_data__INSTITUTION_NAME) {
@@ -105,6 +107,74 @@ public class MysqlConnect {
 		return institution_index__inst_id;
     }
     
+    
+    /**
+	* Check if country index can be retrieved from the current FSRIO Research Projects Database given data from the webscraper.
+	* The last Exception except here needs to be ignored because the comment is added within main scraper and by default it is empty string.
+	* If the exception is not ignored it will give multiple "Illegal operation on empty result set."
+	* 
+	* @param	dbname	FSRIO Research Projects Database name that is defined in config file (typically, process.cfg).
+	* @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
+	* @param	institution_data__INSTITUTION_COUNTRY	Full institution country per institution name on individual projects.
+	* 
+	* @return institution_data__INSTITUTION_COUNTRY By default, it is empty string. The method should return an index of country from the lookup table in DB.
+	*/
+    public static String GetCountrySQL(String dbname, String institution_data__INSTITUTION_COUNTRY, Connection conn) {
+    	/** 
+		* Check the country index in DB.
+		* By default we assume that it exists in the DB but there is possibility it is not spelled correctly or else. 
+		*/
+    	String GetCtrySQL = "SELECT * FROM  "+dbname+".countries WHERE COUNTRY_NAME = ?";
+		ResultSet result = null;
+		try {
+			PreparedStatement preparedStmt = conn.prepareStatement(GetCtrySQL);
+			preparedStmt.setString(1, institution_data__INSTITUTION_COUNTRY);
+			result = preparedStmt.executeQuery();
+			result.next();
+			institution_data__INSTITUTION_COUNTRY = result.getString(1);
+		}
+		catch (Exception except) {;}
+	    
+		return institution_data__INSTITUTION_COUNTRY;
+    }
+    
+    /**
+	* Check if state index can be retrieved from the current FSRIO Research Projects Database given data from the webscraper.
+	* The last Exception except here needs to be ignored because the comment is added within main scraper and by default it is empty string.
+	* If the exception is not ignored it will give multiple "Illegal operation on empty result set."
+	* 
+	* @param	dbname	FSRIO Research Projects Database name that is defined in config file (typically, process.cfg).
+	* @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
+	* @param	stateRegex	This is the state abbreviation that is retrieved in preceding processing within the webscraper calling for this method, particularly Efsa.
+	*
+	* @return state_OK By default, it is empty string. The method should return the string of state abbreviation from the lookup table in DB.
+	*/
+    public static String GetStateSQL(String dbname, Connection conn, String stateRegex) {
+    	/** 
+		* Check the state index in DB.
+		* By default we assume that it exists in the DB but there is possibility it is not spelled correctly or else. 
+		*/
+		String state_OK = "";
+    	try {
+			String GetStSQL = "SELECT abbrv FROM  "+dbname+".states";
+			PreparedStatement preparedStmt = conn.prepareStatement(GetStSQL);
+			ResultSet result = preparedStmt.executeQuery();
+			while (result.next()) {
+				String state = result.getString(1);
+				/**
+				 * Looping through all state names to recognize if it matches the stateRegex.
+				 */
+				Pattern patState = Pattern.compile("("+state+")");
+				Matcher matchState = patState.matcher(stateRegex);
+				if (matchState.find()) {
+					state_OK = state;
+				}
+				
+			}
+		}
+		catch (Exception except) {;}
+    	return state_OK;
+    }
     
     /**
 	* Check if project data exists in the current FSRIO Research Projects Database by the project number, project start date, and project end date. Institution and PI data should also be taken into account as checked above.
