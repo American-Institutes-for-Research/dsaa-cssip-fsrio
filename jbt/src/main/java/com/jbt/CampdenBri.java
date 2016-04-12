@@ -49,6 +49,7 @@ public class CampdenBri {
 	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 	* 
+	* @return			 String "CampdenBRI" to signify that the scraper is done running.
 	* @see               Run
 	*/
 	
