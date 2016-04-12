@@ -139,11 +139,14 @@ public class CampdenBri {
 		* 1) identify links to individual project pages
 		* 2) scrape all necessary information from those individual project pages
 		* <p>
-		* This website has all information on main links and therefore part 1 is unnecessary.
+		* This website has all information on individual projects within primary links and therefore part 1 is unnecessary.
 		*/
 		for (String link : links) {
 			HtmlPage startPage = webClient.getPage(link);
 			Document finaldoc = Jsoup.parse(startPage.asXml());
+			/**
+			 * Handling problems with UTF-8 encoding through scraper/browser settings
+			 */
 			finaldoc.outputSettings().charset().forName("UTF-8");
             finaldoc.outputSettings().escapeMode(EscapeMode.xhtml);
             
@@ -245,10 +248,13 @@ public class CampdenBri {
 								piFirstName = matcherFname.group(1);
 							}
 							investigator_data__name = piLastName+", "+piFirstName;
-							investigator_data__EMAIL_ADDRESS = nextSib.select("a").text();
-							nextSib.select("strong").remove();
-							nextSib.select("a").remove();
-							investigator_data__PHONE_NUMBER = nextSib.text().replace(" ","").replace("+","");
+							String email_phone = nextSib.select("a").text();
+							Pattern patEmailPhone = Pattern.compile("(^.*?)\\s([A-Za-z].*$)");
+							Matcher matcherEmailPhone = patEmailPhone.matcher(email_phone);
+							while (matcherEmailPhone.find()) {
+								investigator_data__PHONE_NUMBER = matcherEmailPhone.group(1);
+								investigator_data__EMAIL_ADDRESS = matcherEmailPhone.group(2);
+							}
 							break;
 						}
 					}
@@ -301,14 +307,23 @@ public class CampdenBri {
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	*/
 	public static void scrapeV2(String[] links, String outfolder, Connection conn, String dbname) throws IOException {
-		//Get current date to assign filename
+		/**
+		* The date is needed in every subclass for logging and file naming purposes given that implement a customized logger for the most transparent and easiest error handling and troubleshooting.
+		*/
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String currentDateLog = dateFormat.format(current);
 		
+		/**
+		* As seen, the naming convention for the output files is class, method, and current date. This is needed to impose version control and easier data organization for FSRIO staff.
+		*/
 		CSVWriter csvout = new CSVWriter(new FileWriter(outfolder+"CampdenBRI_V2_"+currentStamp+".csv"),'\t');
+		/**
+		* Different websites can provide different information on individual projects that is mapped to the FSRIO Research Projects Database.
+		* The naming convention here is [table name]__[data_field]. It is important to keep this naming convention for the database upload process after the output QA is complete.
+		*/
 		String[] header = {"project__PROJECT_NUMBER","project__PROJECT_TITLE",
 				"project__PROJECT_START_DATE","project__PROJECT_END_DATE",
 				"project__PROJECT_OBJECTIVE",
@@ -318,23 +333,36 @@ public class CampdenBri {
 				"agency_index__aid","investigator_data__INSTITUTION"};
 		csvout.writeNext(header);
 		
-		//Initiate webClient
+		/**
+		* The following code initiates the webClient and sets timeout at 50000 ms. 
+		* Some websites, particularly Food Standards Agency are notorious for speed of response and require such high timeout value.
+		*/
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_38);
 		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.getOptions().setTimeout(50000);
 		
+		/**
+		* Every web scraper consists of two parts:
+		* 1) identify links to individual project pages
+		* 2) scrape all necessary information from those individual project pages
+		* <p>
+		* This website has all information on individual projects within primary links and therefore part 1 is unnecessary.
+		*/
 		for (String link : links) {
 			HtmlPage startPage = webClient.getPage(link);
 			Document finaldoc = Jsoup.parse(startPage.asXml());
+			/**
+			 * Handling problems with UTF-8 encoding through scraper/browser settings
+			 */
 			((org.jsoup.nodes.Document) finaldoc).outputSettings().charset().forName("UTF-8");
             ((org.jsoup.nodes.Document) finaldoc).outputSettings().escapeMode(EscapeMode.xhtml);
             
             Element content = finaldoc.select("div.main_box").first();
 			content.select("br").remove(); 
             
-           
-			
-			//Individual projects
+			/**
+			 * Retrieving information on individual projects from one page
+			 */
 			Elements projInfo = content.select("p");
 			for (int i=0; i<projInfo.size();i++) {
 				
@@ -346,17 +374,15 @@ public class CampdenBri {
 				Matcher matchProj = patProj.matcher(projElem.text());
 
 				if (matchProj.find()) {
-					//Declare needed strings
+					/**
+					* Every web scraper declares a list of variables that are present in project web pages. 
+					* It is important that different websites can have different lists of data fields. That explains why we do not template, extend and override.
+					*/
 					String project__PROJECT_NUMBER = "";
 					String project__PROJECT_TITLE = "";
-					String project__source_url = "";
 					String project__PROJECT_START_DATE = "";
 					String project__PROJECT_END_DATE = "";
-					String project__PROJECT_MORE_INFO = "";
 					String project__PROJECT_OBJECTIVE = "";
-					String project__PROJECT_ABSTRACT = "";
-					String project__LAST_UPDATE = "";
-					String project__DATE_ENTERED = "";
 					String investigator_data__PHONE_NUMBER = "";
 					String agency_index__aid = "139";
 					int institution_index__inst_id = 437;
@@ -365,23 +391,21 @@ public class CampdenBri {
 					String investigator_data__name = "";
 					String investigator_data__EMAIL_ADDRESS = "";
 					
-					//Processing variables
+					/**
+					*Processing variables
+					*/
 					String piInfo= "";
-					String piName = "";
-					String query = "";
 					String piLastName = "";
 					String piFirstName = "";
 					
-					//Dates entered and updated
-					DateFormat dateFormatEntered = new SimpleDateFormat("yyyy-MM-dd");
-					String currentEntered = dateFormatEntered.format(current);
-					project__DATE_ENTERED = currentEntered;
-					project__LAST_UPDATE = currentDateLog;
-					
-					//Project title
+					/**
+					 * Project title
+					 */
 					project__PROJECT_TITLE = projElem.select("strong").text();
 
-					//Project number and date
+					/**
+					 * Project number and date
+					 */
 					List<String> matches = new ArrayList<String>();
 					Pattern numdate = Pattern.compile("\\d+");
 					Matcher matchnumdate = numdate.matcher(projElem.text());
@@ -406,7 +430,9 @@ public class CampdenBri {
 						project__PROJECT_NUMBER = allMatches[0];
 					}
 
-					//Project objective and PI info
+					/**
+					 * Project objective and PI info
+					 */
 					int underSize;
 					if (i+5 > projInfo.size()) {
 						underSize = i+(projInfo.size()-i);
@@ -418,7 +444,9 @@ public class CampdenBri {
 						Pattern patSib = Pattern.compile("Contact:");
 						Matcher matchSib = patSib.matcher(nextSib.text());
 						if (matchSib.find()) {
-							//PI info
+							/**
+							 * PI info
+							 */
 							piInfo = nextSib.select("strong").text();
 							piLastName = piInfo.split(" ")[piInfo.split(" ").length-1];
 							Pattern patFname = Pattern.compile("^(.*?)\\s+\\w+$");
@@ -426,7 +454,7 @@ public class CampdenBri {
 							while (matcherFname.find()) {
 								piFirstName = matcherFname.group(1);
 							}
-							piName = piLastName+", "+piFirstName;
+							investigator_data__name = piLastName+", "+piFirstName;
 							investigator_data__EMAIL_ADDRESS = nextSib.select("a").text();
 							nextSib.select("strong").remove();
 							nextSib.select("a").remove();
@@ -440,60 +468,23 @@ public class CampdenBri {
 				
 			
 			if (project__PROJECT_NUMBER != "tbc") {
-				
-				//Check PI name in MySQL DB
-				query = "SELECT * FROM  "+dbname+"investigator_data where name like ?;";
-				ResultSet result = null;
-				try {
-					PreparedStatement preparedStmt = conn.prepareStatement(query);
-					preparedStmt.setString(1, piName);					
-					result = preparedStmt.executeQuery();
-					result.next();
-					investigator_index__inv_id = result.getInt(1);
-				}
-				catch (Exception e) {
-					query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
-					result = null;
-					try {
-						PreparedStatement preparedStmt = conn.prepareStatement(query);
-						preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));					
-						result = preparedStmt.executeQuery();
-						result.next();
-						investigator_index__inv_id = result.getInt(1);
-					}
-					catch (Exception except) {
-						
-					}	
-				}
+				/**
+				* Based on FSRIO guidance, we are checking on several fields whether the project exists in the DB: 
+				* project number, project start date, project end date, institution names and/or PI name (if applicable).
+				* This is exactly what the following MySQL queries are doing.
+				* 
+				* Institution ID is known in this particular source.
+				*/
 
+				investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname,investigator_index__inv_id,conn,investigator_data__name);
+				String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
+				if (status.equals("Found")) continue;
 				
-				if (investigator_index__inv_id == -1) {
-					investigator_data__name = piName;
-				} else {
-
-					investigator_data__name = piName;
-					
-					//Check if project exists in DB
-					query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ? "
-							+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
-					result = null;
-					try {
-						PreparedStatement preparedStmt = conn.prepareStatement(query);
-						preparedStmt.setString(1, project__PROJECT_NUMBER);
-						preparedStmt.setString(2, project__PROJECT_START_DATE);
-						preparedStmt.setString(3, project__PROJECT_END_DATE);
-						preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
-						result = preparedStmt.executeQuery();
-						result.next();
-						String number = result.getString(1);
-						continue;
-					}
-					catch (Exception ex) {;}
-
-				
-				}
-				
-				//Write resultant values into CSV
+				/**
+				* Outputting all data into tab-separated file. 
+				* To prevent any mishaps with opening the file, replacing all new lines, tabs and returns in the fields where these can occur.
+				* Will be one institution per line.
+				*/
 				String[] output = {project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," "),project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," "),
 						project__PROJECT_START_DATE,project__PROJECT_END_DATE,
 						project__PROJECT_OBJECTIVE.replaceAll("[\\n\\t\\r]"," "),
