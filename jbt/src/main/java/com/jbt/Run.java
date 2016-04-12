@@ -81,7 +81,7 @@ public class Run {
 				if (source.equals("Esrc")) {
 					System.out.println("ESRC website scraper is running...");
 					try {
-						Esrc.esrcMain(prop.getProperty("ESRC_MAINPAGE_URL"),outfolder,host,user,passwd,dbname);
+						Esrc.esrcMain(prop.getProperty("ESRC_MAINPAGE_URL"),outfolder,host,user,passwd,dbname,logfile);
 					}
 					catch (Exception e) {
 						e.printStackTrace();
