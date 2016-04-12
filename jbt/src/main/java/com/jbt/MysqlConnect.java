@@ -2,6 +2,7 @@ package com.jbt;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -22,14 +23,11 @@ public class MysqlConnect {
                    DriverManager.getConnection("jdbc:mysql://"+host+"?" +
                                                "user="+user+"&password="+passwd);
  
-            	//System.out.println(conn);
             } catch (SQLException ex) {
                 // handle any errors
-                //
-                //System.out.println("SQLState: " + ex.getSQLState());
-                //System.out.println("VendorError: " + ex.getErrorCode());
                 System.out.println("SQL Exception: Please contact NAL IT to handle this error. This means the Java database connection driver has not started. Details can be found below.");
                 System.out.println("SQLException: " + ex.getMessage());
+                System.exit(0);
         }
         }
         catch (Exception ex) {
@@ -37,5 +35,147 @@ public class MysqlConnect {
         }
         return conn;
     }	
+
+    public static void closeConnection(Connection conn) {
+        try {
+            conn.close();    
+        } catch (SQLException ex) {
+            System.out.println("SQL Exception: Please contact NAL IT to handle this error. This means the Java database connection driver has not started. Details can be found below.");
+            System.out.println("SQLException: " + ex.getMessage());
+            System.exit(0);
+        }
+        
+    }
+    
+    /**
+	* Check if investigator exists in the current FSRIO Research Projects Database.
+	* The last Exception except here needs to be ignored because by default we assume that the PI does not exist in the database and assign -1 index.
+	* If the exception is not ignored it will give multiple "Illegal operation on empty result set."
+	* 
+	* @param	dbname	FSRIO Research Projects Database name that is defined in config file (typically, process.cfg).
+	* @param	investigator_index__inv_id	Principal investigator ID that exists in the investigator_data and investigator_index tables of the FSRIO Research Projects Database. By default, it is -1 if the name does not exist in the FSRIO DB.
+	* @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
+	* @param	investigator_data__name	Full investigator name on individual projects in the format of FSRIO Research Projects Database: [Last Name], [First Name].
+	* @return	investigator_index__inv_id	By default, it will be -1 in case the investigator name does not exist in the current FSRIO Database. It will update accordingly if MySQL finds within the DB.
+	*/
+    public static Integer GetInvestigatorSQL(String dbname, Integer investigator_index__inv_id, Connection conn, String investigator_data__name) {
+    	String GetInvestigatorSQL = "SELECT ID FROM "+dbname+".investigator_data WHERE NAME LIKE ?;";
+    	ResultSet result = null;
+		try {
+			PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
+			preparedStmt.setString(1, investigator_data__name);
+			result = preparedStmt.executeQuery();
+			result.next();
+			investigator_index__inv_id = result.getInt(1);
+		}
+		catch (Exception e) {;}
+		return investigator_index__inv_id;
+    }
+
+    /**
+	* Check if institution data exists in the current FSRIO Research Projects Database.
+	* The last Exception except here needs to be ignored because by default we assume that the PI does not exist in the database and assign -1 index.
+	* If the exception is not ignored it will give multiple "Illegal operation on empty result set."
+	* 
+	* @param	dbname	FSRIO Research Projects Database name that is defined in config file (typically, process.cfg).
+	* @param	institution_index__inst_id	Institution ID that exists in the institution_data and institution_index tables of the FSRIO Research Projects Database. By default, it is -1 if the institution name does not exist in the FSRIO DB. Some data sources do not have any institution-related information.
+	* @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
+	* @param	institution_data__INSTITUTION_NAME	Full institution name on individual projects.
+	* @param	comment	This is a customized string that is written as a commentary to output tab-separated file and serves the purpose of informing FSRIO staff that some additional information can be available elsewhere on the Internet and can be added here.
+	* @return	institution_index__inst_id	By default, it will be -1 in case the institution name does not exist in the current FSRIO Database. It will update accordingly if MySQL finds within the DB.
+	*/
+    public static Integer GetInstitutionSQL(String dbname, Integer institution_index__inst_id, Connection conn, String institution_data__INSTITUTION_NAME) {
+    
+	    /** 
+		* Check if institution exists in DB
+		* By default we assume that it does not exist in the DB. 
+		*/
+		String GetInstIDsql = "SELECT ID FROM  "+dbname+".institution_data WHERE INSTITUTION_NAME LIKE ?;";
+		ResultSet rs = null;
+		try {
+			PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
+			preparedStmt.setString(1, institution_data__INSTITUTION_NAME); 
+			rs = preparedStmt.executeQuery();
+	
+			rs.next();
+			institution_index__inst_id = rs.getInt(1);
+		}
+		catch (Exception except) {
+		}
+		return institution_index__inst_id;
+    }
+    
+    
+    /**
+	* Check if project data exists in the current FSRIO Research Projects Database by the project number, project start date, and project end date. Institution and PI data should also be taken into account as checked above.
+	* The Exception ex here needs to be ignored because by default we assume that the project data does not exist in the database.
+	* If the exception is not ignored it will give multiple "Illegal operation on empty result set."
+	* 
+	* @param	dbname	FSRIO Research Projects Database name that is defined in config file (typically, process.cfg).
+	* @param	project__PROJECT_NUMBER	This is empty by default: we are just checking with this method whether project data exists at all in the DB.
+	* @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
+	* @param	project__PROJECT_START_DATE	The project start date as retrieved from the individual project pages. Sometimes there is no such data and therefore we also check if that can be NULL.	
+	* @param	project__PROJECT_END_DATE	The project end date as retrieved from the individual project pages. Sometimes there is no such data and therefore we also check if that can be NULL.
+	* @param	investigator_index__inv_id	Principal investigator ID that exists in the investigator_data and investigator_index tables of the FSRIO Research Projects Database. By default, it is -1 if the name does not exist in the FSRIO DB. Some data sources do not have any PI-related information.
+	* @param	institution_index__inst_id	Institution ID that exists in the institution_data and institution_index tables of the FSRIO Research Projects Database. By default, it is -1 if the institution name does not exist in the FSRIO DB. Some data sources do not have any institution-related information.
+	* @return	project__PROJECT_NUMBER	By default, the project data does not exist in the FSRIO DB. The project number can be alphanumeric string and will be returned here if exists. 
+	*/
+    public static String GetProjectNumberSQL(String dbname, String project__PROJECT_NUMBER, Connection conn, String project__PROJECT_START_DATE, String project__PROJECT_END_DATE, Integer investigator_index__inv_id, Integer institution_index__inst_id) {
+        
+	    /**
+	     * There can be multiple cases where only investigator name or institution name is available per data source. 
+	     * We need to handle all those situations and only check fields that exists within the DB with regard to such source.
+	     * By default, we set in all scrapers investigator_index__inv_id and institution_index__inst_id == -2 in scrapers where we know those respective fields do not exist.
+	     */
+    	
+    	String query = "";
+    	/**
+    	 * We need a special status string that will tell us if the project number was found in the DB or not so that we know whether to skip link or proceed. 
+    	 */
+    	String status = "";
+    	if (investigator_index__inv_id == -2 && institution_index__inst_id == -2) {
+	    	query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
+					+ "where p.PROJECT_NUMBER = ? and (p.PROJECT_START_DATE = ? or p.PROJECT_START_DATE is NULL)"
+					+ " and (p.PROJECT_END_DATE = ? or p.PROJECT_END_DATE is NULL);";	
+	    } else if (investigator_index__inv_id == -2) {
+	    	query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
+					+ "left outer join "+dbname+".institution_index insti on insti.pid = p.id "
+					+ "where p.PROJECT_NUMBER = ? and (p.PROJECT_START_DATE = ? or p.PROJECT_START_DATE is NULL)"
+					+ " and (p.PROJECT_END_DATE = ? or p.PROJECT_END_DATE is NULL) and insti.inst_id = ?;";
+	    } else if (institution_index__inst_id == -2) {
+	    	query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
+					+ "left outer join "+dbname+".investigator_index ii on ii.pid = p.id "
+					+ "where p.PROJECT_NUMBER = ? and (p.PROJECT_START_DATE = ? or p.PROJECT_START_DATE is NULL)"
+					+ " and (p.PROJECT_END_DATE = ? or p.PROJECT_END_DATE is NULL) and ii.inv_id = ?;";
+	    } else {
+		    query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
+					+ "left outer join "+dbname+".investigator_index ii on ii.pid = p.id "
+					+ "left outer join "+dbname+".institution_index insti on insti.pid = p.id "
+					+ "where p.PROJECT_NUMBER = ? and (p.PROJECT_START_DATE = ? or p.PROJECT_START_DATE is NULL)"
+					+ " and (p.PROJECT_END_DATE = ? or p.PROJECT_END_DATE is NULL) and ii.inv_id = ? and insti.inst_id = ?;";
+	    }
+    	
+		ResultSet result = null;
+		try {
+			PreparedStatement preparedStmt = conn.prepareStatement(query);
+			preparedStmt.setString(1, project__PROJECT_NUMBER);
+			preparedStmt.setString(2, project__PROJECT_START_DATE); 
+			preparedStmt.setString(3, project__PROJECT_END_DATE); 
+			if (investigator_index__inv_id == -2 && institution_index__inst_id == -2) {		    } 
+			else if (investigator_index__inv_id == -2) {preparedStmt.setString(4, String.valueOf(institution_index__inst_id));} 
+		    else if (institution_index__inst_id == -2) {preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));} 
+		    else {
+		    	preparedStmt.setString(4, String.valueOf(investigator_index__inv_id)); 
+				preparedStmt.setString(5, String.valueOf(institution_index__inst_id));
+		    }
+			result = preparedStmt.executeQuery();
+			result.next();
+			String number = result.getString(1);
+			status = "Found";
+		}
+		catch (Exception ex) { status = "Miss";}
+		return status;
+    }
+
 	
 }
