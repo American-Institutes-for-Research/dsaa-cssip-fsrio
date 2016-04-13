@@ -7,18 +7,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -34,17 +29,26 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.opencsv.CSVWriter;
 
+/**
+* This class scrapes the website associated with the UK Economic and Social Research Council (ESRC).
+* Returns String "FSA" when done. The class writes output directly into the tab-separate spreadsheet for review and quality control.
+* Utilizes the links provided by FSRIO and requires several parameters specified in the main Run class.
+*/
+
+
 public class Fsa {
 	/**
-	* This method calls scrape function in the FSA class
+	* This scraper goes through the website associated with the Food Standards Agency.
+	* All major weblinks are specified in the config file (typically, process.cfg) and can be retrieved/updated there.
 	* 
 	* @param links       The main web links associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet. The links are "entry points" into the websites where web pages for individual projects can be found.
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
 	* @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
-	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is passed through command line.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
+	* @return			 String "FSA" to signify that the scraper is done running.
 	* @see               Run
 	*/
 	public static String fsaMain(String[] links, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
@@ -58,12 +62,8 @@ public class Fsa {
 		*/
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-		/**
-		* This scraper goes through websites associated with FSA
-		* All major weblinks are specified in the config file (typically, process.cfg) and can be retrieved/updated there.
-		*/
 		Fsa.scrape(links,outfolder,conn,dbname,logfile);
-
+		MysqlConnect.closeConnection(conn);
 		return "FSA";
 	}
 	/**
@@ -71,10 +71,10 @@ public class Fsa {
 	* 
 	* @param links       The main web links associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet. The links are "entry points" into the websites where web pages for individual projects can be found.
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the fsaMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
-*/
+	*/
 	public static void scrape(String[] links,String outfolder, Connection conn, String dbname, String logfile) throws IOException {
 		/**
 		* The date is needed in every subclass for logging and file naming purposes given that implement a customized logger for the most transparent and easiest error handling and troubleshooting.
@@ -102,7 +102,7 @@ public class Fsa {
 		
 		/**
 		* The following code initiates the webClient and sets timeout at 50000 ms. 
-		* Some websites, particularly Food Standards Agency are notorious for speed of response and require such high timeout value.
+		* Some websites, particularly this one, are notorious for speed of response and require such high timeout value.
 		*/
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_38);
 		webClient.getOptions().setThrowExceptionOnScriptError(false);
@@ -145,7 +145,9 @@ public class Fsa {
             	Matcher badSymb = patSymb.matcher(projLink.attr("href"));
             	if (!badSymb.find()) {
             		if (!Arrays.asList(links).contains("http://www.food.gov.uk"+projLink.attr("href"))) {
-            			
+            			/**
+            			* Here is where we finished Part 1: identifying links to individual project pages.
+            			*/
             			try {
             				HtmlPage finalPage = webClient.getPage("http://www.food.gov.uk/"+projLink.attr("href"));
             				Document finaldoc = Jsoup.parse(finalPage.asXml());
@@ -162,11 +164,9 @@ public class Fsa {
 	    					String project__PROJECT_END_DATE = "";
 	    					String project__PROJECT_MORE_INFO = "";
 	    					String project__PROJECT_OBJECTIVE = "";
-	    					String project__LAST_UPDATE = "";
-	    					String project__DATE_ENTERED = "";
 	    					String agency_index__aid = "65";
             				int investigator_index__inv_id = -2;
-            				int institution_index__inst_id = -2;
+            				int institution_index__inst_id = -1;
             				String comment = "";
 	    					
             				/**
@@ -210,43 +210,8 @@ public class Fsa {
 	        						project__PROJECT_END_DATE = matchDates.group(2);
 	        					}
 	        				}
-	        				/**
-	        				* Based on FSRIO guidance, we are checking on several fields whether the project exists in the DB: project number, project start date, project end date, institution names and/or PI name (if applicable).
-	        				* This is exactly what the following MySQL queries are doing.
-	        				*/
-	        				try {
-	        					/** 
-	        					* It is normal at this website not to have institution information and it is not critical. So, no need to distract the flow by meaningful exception handler.
-	        					*/
-	        					if (projInfo.equals("")) {
-	        						institution_data__INSTITUTION_NAME = finaldoc.select("strong:containsOwn(Contractor)").first().parent().text().replace("Contractor: ","");
-	        					} else {
-	        						Pattern patInst = Pattern.compile("Contractor\\:\\s+(.*?)");
-		        					Matcher matchInst = patInst.matcher(projInfo);
-		        					while (matchInst.find()) {
-		        						institution_data__INSTITUTION_NAME = matchInst.group(1);
-		        					}
-	        					}
-	        					institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
-
-	        				} catch (Exception ee) {
-	        					comment = "No institution information available; please check "+ project__source_url + " to identify if any additional information can be retrieved.";
-	        				}
 	        				
-	        				String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
-	        				if (status.equals("Found")) continue;
-
-
-	    					
-    						/**
-    						 * Dates entered and updated
-    						 */
-        					DateFormat dateFormatEntered = new SimpleDateFormat("yyyy-MM-dd");
-        					String currentEntered = dateFormatEntered.format(current);
-        					project__DATE_ENTERED = currentEntered;
-        					project__LAST_UPDATE = dateFormat.format(current);
-        					
-        					/**
+	        				/**
         					 * Extract project title.
         					 */
         					project__PROJECT_TITLE = finaldoc.select("#page-title").text();
@@ -282,6 +247,36 @@ public class Fsa {
 							}
 							
 	        				/**
+	        				* Based on FSRIO guidance, we are checking on several fields whether the project exists in the DB: project number, project start date, project end date, institution names and/or PI name (if applicable).
+	        				* This is exactly what the following MySQL queries are doing.
+	        				*/
+	        				try {
+	        					/** 
+	        					* It is normal at this website not to have institution information and it is not critical. So, no need to distract the flow by meaningful exception handler.
+	        					*/
+	        					if (projInfo.equals("")) {
+	        						institution_data__INSTITUTION_NAME = finaldoc.select("strong:containsOwn(Contractor)").first().parent().text().replace("Contractor: ","");
+	        					} else {
+	        						Pattern patInst = Pattern.compile("Contractor\\:\\s+(.*?)");
+		        					Matcher matchInst = patInst.matcher(projInfo);
+		        					while (matchInst.find()) {
+		        						institution_data__INSTITUTION_NAME = matchInst.group(1);
+		        					}
+	        					}
+	        					institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
+	        					if (institution_index__inst_id == -1) {
+	        						comment = "Institution not in the DB; please collect information manually and populate in institution_data table.";
+	        					}
+	        					
+	        				} catch (Exception ee) {
+	        					comment = "No institution information available; please check "+ project__source_url + " to identify if any additional information can be retrieved.";
+	        				}
+	        				
+	        				String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
+	        				if (status.equals("Found")) continue;
+
+        					
+	        				/**
 	        				* Outputting all data into tab-separated file. 
 	        				* To prevent any mishaps with opening the file, replacing all new lines, tabs and returns in the fields where these can occur.
 	        				*/
@@ -300,7 +295,6 @@ public class Fsa {
 								StringWriter errors = new StringWriter();
 								Date currentLog = new Date();
 								String currentDateLog = dateFormat.format(currentLog);
-								
 								ex.printStackTrace(new PrintWriter(errors));
 								out.println(currentDateLog
 							    			+"   "
