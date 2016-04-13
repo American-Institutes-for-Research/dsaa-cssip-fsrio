@@ -55,7 +55,13 @@ public class Esrc {
 		*/
 		Connection conn = MysqlConnect.connection(host,user,passwd);
 		
-		Esrc.scrape(url,outfolder,conn,dbname, logfile);
+		try {
+			Esrc.scrape(url,outfolder,conn,dbname, logfile);
+		} catch (Exception ex) {
+			System.out.println("Warning: The ESRC scraper did not succeed. This error has not been seen before, i.e. not handled separately. It is possible that the website is down. Please share the following information with the IT support to troubleshoot:");
+			ex.printStackTrace();
+			System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
+		}
 		MysqlConnect.closeConnection(conn);
 		return "ESRC";
 

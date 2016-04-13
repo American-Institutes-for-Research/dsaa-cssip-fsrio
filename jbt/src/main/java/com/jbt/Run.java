@@ -5,8 +5,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.util.Arrays;
