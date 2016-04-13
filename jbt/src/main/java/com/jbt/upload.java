@@ -11,7 +11,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -25,19 +24,36 @@ import org.apache.commons.lang3.StringUtils;
 
 import net.sf.junidecode.Junidecode;
 
+/**
+ * This class uploads the data into FSRIO Research Projects Database after the QA is done on tab-separated files from scraping and parsing.
+ *
+ */
 public class upload {
+	/**
+	 * Dates are defined for LAST_UPDATE and DATE_ENTERED fields.
+	 */
 	static Date current = new Date();
 	static DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 	static String currentStamp = dateFormatCurrent.format(current);
-
+	
+	/**
+	 * This method calls the upload from files one by one.
+	 *  
+	 * @param Filename 
+	 * @param host
+	 * @param user
+	 * @param passwd
+	 * @param dbname
+	 * @param logfile
+	 * @throws IOException
+	 */
 	public static void mainUpload(File Filename, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		System.out.println("Working on "+Filename);
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
 		Connection conn = MysqlConnect.connection(host,user,passwd);
-
 		uploadRecords(Filename,conn, dbname);
-		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
+		MysqlConnect.closeConnection(conn);		
 	}
 
 	public static void uploadRecords(File fileName, Connection conn, String dbname) throws IOException {
