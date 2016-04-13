@@ -1095,8 +1095,7 @@ public class AHDB {
 						e.printStackTrace(new PrintWriter(errors));
 						out.println(currentDateLog
 					    			+"   "
-					    			+"Something went terribly wrong with scraping here "
-					    			+ "or maybe just a generic link to Related publications "
+					    			+"Most probably this is just a generic link to Related publications "
 					    			+ "that's not needed here - check at "+project__source_url+" ."
 					    			+" Here is some help with traceback:"
 					    			+errors.toString());
