@@ -48,6 +48,7 @@ public class Relu {
 	*
 	* @return			 String "RELU" to signify that the scraper is done running.
 	* @see               Run
+	* @throws			 IOException
 	*/
 	public static String reluMain(String[] links, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		/**

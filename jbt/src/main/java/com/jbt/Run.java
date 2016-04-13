@@ -25,7 +25,12 @@ public class Run {
 	 * <li>For running upload: java -jar fsrio.jar "process.cfg" "password" "upload"</li></ul>
 	 * 
 	 * @param args	These are the arguments passed directly from command line and include [config file], [DB password], and tool stage either "scrape" or "upload".
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws ParserConfigurationException
+	 * @throws Exception
 	 */
+	
 	public static void main(String[] args) throws IOException,SAXException,ParserConfigurationException,Exception {
 		/**
 		 * We start by loading the properties from config file specified in command line (typically, process.cfg).

@@ -49,6 +49,7 @@ public class Defra {
 	* 
 	* @return			 String "DEFRA" to signify that the scraper is done running.
 	* @see               Run
+	* @throws IOException
 	*/
 	public static String defraMain(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
 		/**

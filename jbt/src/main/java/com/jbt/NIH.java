@@ -41,7 +41,8 @@ public class NIH {
  	 * @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
  	 * @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is passed through command line.
 	 * @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
-	 * @return			 String "NIH" to signify that the scraper is done running.
+	 * @return 			  String "NIH" to signify that the scraper is done running.
+	 * @throws			  IOException
 	 */
 	public static String nihMain(String inputfolder, String inputfolder_abstracts, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
 		

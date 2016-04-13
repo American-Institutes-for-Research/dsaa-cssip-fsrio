@@ -2,34 +2,23 @@ package com.jbt;
 import net.sf.junidecode.Junidecode;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.URL;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.URLEncoder;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Entities.EscapeMode;
 import org.jsoup.select.Elements;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
@@ -37,18 +26,27 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.opencsv.CSVWriter;
 
+/**
+* This class scrapes the website associated with the European Food Safety Promotion Board (FSPB).
+* Returns String "FSPB" when done. The class writes output directly into the tab-separate spreadsheet for review and quality control.
+* Utilizes the links provided by FSRIO and requires several parameters specified in the main Run class.
+*/
+
 public class Fspb {
 	/**
-	* This method calls scrape function in the FSPB class
-	* 
+	* This scraper goes through the website associated with the European Food Safety Promotion Board (FSPB).
+	* The main page URL is specified in the config file (typically, process.cfg) and can be retrieved/updated there.
+ 	*
 	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
 	* @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
-	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is passed through command line.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
+	* @return			 String "FSPB" to signify that the scraper is done running.
 	* @see               Run
+	* @throws			 IOException
 	*/
 	public static String fspbMain(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		/**
@@ -61,11 +59,15 @@ public class Fspb {
 		*/
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-		/**
-		* This scraper goes through websites associated with FSPB
-		* All major weblinks are specified in the config file (typically, process.cfg) and can be retrieved/updated there.
-		*/
-		Fspb.scrape(url,outfolder,conn,dbname,logfile);
+		
+		try {
+			Fspb.scrape(url,outfolder,conn,dbname,logfile);
+		} catch (Exception ex) {
+			System.out.println("Warning: The FSPB scraper did not succeed. This error has not been seen before, i.e. not handled separately. It is possible that the website is down. Please share the following information with the IT support to troubleshoot:");
+			ex.printStackTrace();
+			System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
+		}
+		MysqlConnect.closeConnection(conn);
 		return "FSPB";
 	}
 	/**
@@ -73,7 +75,7 @@ public class Fspb {
 	* 
 	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the fspbMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
 */
@@ -108,7 +110,7 @@ public class Fspb {
 		csvout.writeNext(header);
 		/**
 		* The following code initiates the webClient and sets timeout at 50000 ms. 
-		* Some websites, particularly Food Standards Agency are notorious for speed of response and require such high timeout value.
+		* Some websites, particularly Food Standards Agency, are notorious for speed of response and require such high timeout value.
 		*/
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_38);
 		webClient.getOptions().setThrowExceptionOnScriptError(false);
@@ -157,7 +159,7 @@ public class Fspb {
 				
 			/**
 			* Every web scraper declares a list of variables that are present in project web pages. 
-			* It is important that different websites can have different lists of data fields..
+			* It is important that different websites can have different lists of data fields.
 			*/
 			String project__PROJECT_NUMBER = "";
 			String project__PROJECT_TITLE = "";
@@ -165,27 +167,16 @@ public class Fspb {
 			String project__PROJECT_START_DATE = "";
 			String project__PROJECT_END_DATE = "";
 			String project__PROJECT_OBJECTIVE = "";
-			String project__LAST_UPDATE = "";
-			String project__DATE_ENTERED = "";
 			String agency_index__aid = "82";
-			int institution_index__inst_id = -1;
-			int investigator_index__inv_id = -1;
-			String comment = "";
-			
-			/**
-			 * Institution Variables
-			 */
 			String institution_data__INSTITUTION_NAME = "";
 			String institution_data__INSTITUTION_ADDRESS1 = "";
 			String institution_data__INSTITUTION_CITY = "";
 			String institution_data__INSTITUTION_COUNTRY = "";
 			String institution_data__INSTITUTION_ZIP = "";
-			String institution_data__INSTITUTION_STATE = "";
-			
-			/**
-			 * PI variables
-			 */
+			int institution_index__inst_id = -1;
 			String investigator_data__name = "";
+			int investigator_index__inv_id = -1;
+			String comment = "";
 			
 			/**
 			 * Processing variables
@@ -224,16 +215,7 @@ public class Fspb {
 			
 			
 			/**
-			 * Format date information was entered. 
-			 */
-			
-			DateFormat dateFormatEntered = new SimpleDateFormat("yyyy-MM-dd");
-			String currentEntered = dateFormatEntered.format(current);
-			project__DATE_ENTERED = currentEntered;
-			project__LAST_UPDATE = currentDateLog;
-			
-			/**
-			 * Check to see if Project title exists, if it doesnt handle the exception and make title blank.
+			 * Check to see if Project title exists; if it does not handle the exception and make title blank.
 			 */
 			try {
 				project__PROJECT_TITLE = finaldoc.select("h3").text();
@@ -241,6 +223,7 @@ public class Fspb {
 			catch (Exception exx) {
 				project__PROJECT_TITLE = "";
 			}
+			
 			/**
 			 *Extract project objective, and clean up.
 			 */
@@ -313,7 +296,7 @@ public class Fspb {
 			} 
 			
 			/**
-			 * Project Dates
+			 * Project dates
 			 */
 			String projCommence = "";
 			String projDura = "";
@@ -349,10 +332,18 @@ public class Fspb {
 			} else if (projDura.split(" ")[1].startsWith("year")) {
 				projDays = Integer.valueOf(projDura.split(" ")[0])*365;
 			} else {
-				/**
-				 * Log an error with dates - projDura
-				 */
+				try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(logfile, true)))) {
+					out.println(currentDateLog
+				    			+"   "
+				    			+"Perhaps the project information is not complete yet and needs to be re-scraped later - pass it for now and come back later "
+				    			+". THe primary problems is with the dates - "+projDura
+				    			+". Double check here if you wish - http://www.safefood.eu"
+				    			+projLink.attr("href")+" .");
+				}catch (IOException e) {
+
+				}
 			}
+			
 			/**
 			* Extract just the year from project dates. 
 			*/
@@ -385,8 +376,9 @@ public class Fspb {
 			*/
 			investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
 			institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
-		
-
+			String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
+			if (status.equals("Found")) continue;
+			
 			if (institution_index__inst_id == -1) {
 				comment = "It is likely that the awardee institution of this project "
 						+ "does not exist in institution data. Please follow the link "
@@ -409,11 +401,7 @@ public class Fspb {
 							+ " to look for additional information about the investigator to be inserted into the database. "
 							+ "The needed investigator fields are empty in this row.";
 				}
-			} else {
-				String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
-				if (status.equals("Found")) continue;
 
-			}
 			
 			/**
 			* Outputting all data into tab-separated file. 
@@ -436,6 +424,7 @@ public class Fspb {
 		
 		csvout.close();
 		webClient.close();
+		}
 	}
 }
 

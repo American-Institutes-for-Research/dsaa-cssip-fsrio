@@ -41,6 +41,7 @@ public class Omafra {
 	* 
 	* @return			 String "OMAFRA" to signify that the scraper is done running.
 	* @see               Run
+	* @throws		     IOException
 	*/
 	public static String omafraMain(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
 		/**

@@ -51,8 +51,8 @@ public class CampdenBri {
 	* 
 	* @return			 String "CampdenBRI" to signify that the scraper is done running.
 	* @see               Run
+	* @throws IOException
 	*/
-	
 	public static String campdenMain(String outfolder, String[] links, String[] links2, String host, String user, String passwd, String dbname) throws IOException {
 		/**
 		* The gargoylsoftware Web Client is rather capricious and prints out every JavaScript error possible even when they are meaningless for the scraper.

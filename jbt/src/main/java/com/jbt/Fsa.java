@@ -3,8 +3,6 @@ package com.jbt;
 /* fix start and end date for some projects */
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,7 +33,6 @@ import com.opencsv.CSVWriter;
 * Utilizes the links provided by FSRIO and requires several parameters specified in the main Run class.
 */
 
-
 public class Fsa {
 	/**
 	* This scraper goes through the website associated with the Food Standards Agency.
@@ -50,6 +47,7 @@ public class Fsa {
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
 	* @return			 String "FSA" to signify that the scraper is done running.
 	* @see               Run
+	* @throws			 IOException
 	*/
 	public static String fsaMain(String[] links, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		/**

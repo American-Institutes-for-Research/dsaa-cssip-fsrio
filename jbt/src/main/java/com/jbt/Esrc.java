@@ -42,6 +42,7 @@ public class Esrc {
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
 	* @return			 String "ESRC" to signify that the scraper is done running.
 	* @see               Run
+	* @throws			 IOException
 	*/
 	public static String esrcMain(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		/**

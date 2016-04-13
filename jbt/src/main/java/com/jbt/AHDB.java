@@ -54,6 +54,7 @@ public class AHDB {
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
 	* @see               Run
+	* @throws Exception
 	*/
 	public static void ahdbMain(String outfolder, String[] links, String host, String user, String passwd, String dbname, String logfile) throws Exception {
 		/**

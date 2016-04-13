@@ -53,6 +53,7 @@ public class Efsa {
 	*
 	* @return			 String "EFSA" to signify that the scraper is done running.
 	* @see               Run
+	* @throws	         IOException
 	*/
 	public static String efsaMain(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		/**
