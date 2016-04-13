@@ -44,7 +44,7 @@ public class Defra {
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
 	* @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
-	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is passed through command line.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 	* 
 	* @return			 String "DEFRA" to signify that the scraper is done running.
@@ -79,7 +79,7 @@ public class Defra {
 	* 
 	* @param url         The main URL associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet. The link is the "entry point" into the web pages of individual projects.
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the defraMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	*/
 	public static void scrape(String url, String outfolder, Connection conn, String dbname) throws IOException {
