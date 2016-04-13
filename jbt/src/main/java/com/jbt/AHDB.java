@@ -53,7 +53,7 @@ public class AHDB {
 	* @param links       The main web links associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet. The links are "entry points" into the websites where web pages for individual projects can be found.
 	* @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
 	* @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
-	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is passed through command line.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
 	* @see               Run
@@ -152,7 +152,7 @@ public class AHDB {
 	* 
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the ahdbMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	*/
 	
@@ -330,7 +330,7 @@ public class AHDB {
 	* 
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the ahdbMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	*/
 	public static void horticulture(String outfolder, String url, Connection conn, String dbname) throws Exception {
@@ -512,7 +512,7 @@ public class AHDB {
 	* 
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the ahdbMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	*/
 	public static void dairy(String outfolder, String url, Connection conn, String dbname) throws Exception {
@@ -705,7 +705,7 @@ public class AHDB {
 	* 
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the ahdbMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console. The logfile needs to be included here because some messages were identified in this given scraper to be important for IT attention.
 	*/
@@ -908,7 +908,7 @@ public class AHDB {
 	* 
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the ahdbMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console. The logfile needs to be included here because some messages were identified in this given scraper to be important for IT attention.
 	*/
@@ -1147,7 +1147,7 @@ public class AHDB {
 	* 
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the ahdbMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	*/
 	
