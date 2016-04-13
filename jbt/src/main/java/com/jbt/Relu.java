@@ -108,7 +108,7 @@ public class Relu {
 				"institution_data__INSTITUTION_NAME",
 				"investigator_data__name",
 				"institution_index__inst_id","investigator_index__inv_id",
-				"agency_index__aid","investigator_data__INSTITUTION"};
+				"agency_index__aid"};
 		
 		csvout.writeNext(header);
 		
@@ -166,9 +166,7 @@ public class Relu {
 				 * Processing variables
 				 */
 				String piInfo= "";
-				String piName = "";
 				String instInfo = "";
-				String query = "";
 				String piLastName = "";
 				String piFirstName = "";
 				
@@ -264,7 +262,7 @@ public class Relu {
 								institution_data__INSTITUTION_NAME.replaceAll("[\\n\\t\\r]"," "),
 								investigator_data__name.replaceAll("[\\n\\t\\r]"," "),
 								String.valueOf(institution_index__inst_id),String.valueOf(investigator_index__inv_id),
-								agency_index__aid,String.valueOf(investigator_data__INSTITUTION)};
+								agency_index__aid};
 						
 							csvout.writeNext(output);
 						
@@ -275,13 +273,12 @@ public class Relu {
 					/**
 					 * Log the link and error
 					 */
-					System.out.println("It is likely that the website is not working at the moment. Please refer to the error log file for any additional details.");
 					try(PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(logfile, true)))) {
 						StringWriter errors = new StringWriter();
 						eee.printStackTrace(new PrintWriter(errors));
 						out.println(currentDateLog
 					    			+"   "
-					    			+"Perhaps the link is broken or does not exist, e.g. Page Not Found. The website can be broken altogether because it happens on RELU - "+projLink.attr("href")+" ."
+					    			+"Perhaps the link is broken or does not exist, e.g. Page Not Found. It has been seen on this website before. The website can be broken altogether because it happens on RELU - "+projLink.attr("href")+" ."
 					    			+" Here is some help with traceback:"
 					    			+errors.toString());
 					}catch (IOException e) {
