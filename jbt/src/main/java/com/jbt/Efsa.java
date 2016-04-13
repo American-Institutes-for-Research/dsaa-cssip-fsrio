@@ -342,9 +342,9 @@ public class Efsa {
 										 * If the country is United States, then also check the state.
 										 */
 										if (Integer.valueOf(institution_data__INSTITUTION_COUNTRY) == 1) {
-											String state = MysqlConnect.GetStateSQL(dbname, conn, allMatches[2]);
-											institution_data__INSTITUTION_STATE = state;
-											institution_data__INSTITUTION_ZIP = institution_data__INSTITUTION_ZIP.replace(state,"");
+											String stateAll = MysqlConnect.GetStateSQL(dbname, conn, allMatches[2]);
+											institution_data__INSTITUTION_STATE = stateAll.split("_")[0];
+											institution_data__INSTITUTION_ZIP = institution_data__INSTITUTION_ZIP.replace(stateAll.split("_")[1],"");
 											if (institution_data__INSTITUTION_STATE.equals("")) {
 												/**
 												 * Add to comment field rather than just have it there re-write other comments

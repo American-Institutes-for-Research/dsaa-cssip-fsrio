@@ -245,6 +245,7 @@ public class NIH {
 				
 				if (institution_data__INSTITUTION_COUNTRY.equals("1")) {
 					institution_data__INSTITUTION_STATE = MysqlConnect.GetStateSQL(dbname, conn, institution_data__INSTITUTION_STATE.trim());
+					institution_data__INSTITUTION_STATE = institution_data__INSTITUTION_STATE.split("_")[0];
 				}
 				if (institution_data__INSTITUTION_STATE.equals("")) {
 					/**

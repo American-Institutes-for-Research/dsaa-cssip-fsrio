@@ -168,18 +168,19 @@ public class MysqlConnect {
 		*/
 		String state_OK = "";
     	try {
-			String GetStSQL = "SELECT abbrv FROM  "+dbname+".states";
+			String GetStSQL = "SELECT id,abbrv FROM  "+dbname+".states";
 			PreparedStatement preparedStmt = conn.prepareStatement(GetStSQL);
 			ResultSet result = preparedStmt.executeQuery();
 			while (result.next()) {
-				String state = result.getString(1);
+				String stateID = result.getString(1);
+				String state = result.getString(2);
 				/**
 				 * Looping through all state names to recognize if it matches the stateRegex.
 				 */
 				Pattern patState = Pattern.compile("("+state+")");
 				Matcher matchState = patState.matcher(stateRegex);
 				if (matchState.find()) {
-					state_OK = state;
+					state_OK = stateID+"_"+state;
 				}
 				
 			}

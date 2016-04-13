@@ -281,6 +281,7 @@ public class NSF {
 					investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name,institution_index__inst_id);
 					institution_data__INSTITUTION_COUNTRY = MysqlConnect.GetCountrySQL(dbname, countries__COUNTRY_NAME.trim(), conn);
 					institution_data__INSTITUTION_STATE = MysqlConnect.GetStateSQL(dbname, conn, states__states_abbrv);
+					institution_data__INSTITUTION_STATE = institution_data__INSTITUTION_STATE.split("_")[0];
 					
 					/**
 					 * Check project data by other fields in case institution and investigator data exist.
