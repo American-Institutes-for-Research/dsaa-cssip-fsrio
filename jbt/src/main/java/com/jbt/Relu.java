@@ -246,7 +246,7 @@ public class Relu {
 							piFirstName = matcherFname.group(1);
 						}
 						investigator_data__name = piLastName+", "+piFirstName;
-						investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
+						investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name,institution_index__inst_id);
 						
 						String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
 						if (status.equals("Found")) continue;

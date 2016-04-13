@@ -277,8 +277,8 @@ public class NSF {
 					* This is exactly what the following MySQL queries are doing.
 					*/
 					
-					investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
 					institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
+					investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name,institution_index__inst_id);
 					institution_data__INSTITUTION_COUNTRY = MysqlConnect.GetCountrySQL(dbname, countries__COUNTRY_NAME.trim(), conn);
 					institution_data__INSTITUTION_STATE = MysqlConnect.GetStateSQL(dbname, conn, states__states_abbrv);
 					

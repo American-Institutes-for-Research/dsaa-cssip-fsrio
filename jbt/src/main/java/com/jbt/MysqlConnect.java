@@ -53,7 +53,7 @@ public class MysqlConnect {
     }
     
     /**
-	* Check if investigator exists in the current FSRIO Research Projects Database.
+	* Check if investigator exists in the current FSRIO Research Projects Database. By definition, the unique pair is investigator-institution - so, we are checking for both here if they exist.
 	* The last Exception except here needs to be ignored because by default we assume that the PI does not exist in the database and assign -1 index.
 	* If the exception is not ignored it will give multiple "Illegal operation on empty result set."
 	* 
@@ -61,14 +61,23 @@ public class MysqlConnect {
 	* @param	investigator_index__inv_id	Principal investigator ID that exists in the investigator_data and investigator_index tables of the FSRIO Research Projects Database. By default, it is -1 if the name does not exist in the FSRIO DB.
 	* @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
 	* @param	investigator_data__name	Full investigator name on individual projects in the format of FSRIO Research Projects Database: [Last Name], [First Name].
+	* @param	institution_index__inst_id	Institution ID that exists in the institution_data and institution_index tables of the FSRIO Research Projects Database. By default, it is -1 if the institution name does not exist in the FSRIO DB. Some data sources do not have any institution-related information.
 	* @return	investigator_index__inv_id	By default, it will be -1 in case the investigator name does not exist in the current FSRIO Database. It will update accordingly if MySQL finds within the DB.
 	*/
-    public static Integer GetInvestigatorSQL(String dbname, Integer investigator_index__inv_id, Connection conn, String investigator_data__name) {
-    	String GetInvestigatorSQL = "SELECT ID FROM "+dbname+".investigator_data WHERE NAME LIKE ?;";
+    public static Integer GetInvestigatorSQL(String dbname, Integer investigator_index__inv_id, Connection conn, String investigator_data__name, int institution_index__inst_id) {
+    	String GetInvestigatorSQL = "";
+    	if (institution_index__inst_id == -2) {
+    		GetInvestigatorSQL = "SELECT ID FROM "+dbname+".investigator_data WHERE NAME LIKE ?;";	
+    	} else {
+    		GetInvestigatorSQL = "SELECT ID FROM "+dbname+".investigator_data WHERE NAME LIKE ? AND INSTITUTION = ?;";
+    	}
     	ResultSet result = null;
 		try {
 			PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
 			preparedStmt.setString(1, investigator_data__name);
+			if (institution_index__inst_id != -2) {
+				preparedStmt.setString(2, String.valueOf(institution_index__inst_id));
+			}
 			result = preparedStmt.executeQuery();
 			result.next();
 			investigator_index__inv_id = result.getInt(1);

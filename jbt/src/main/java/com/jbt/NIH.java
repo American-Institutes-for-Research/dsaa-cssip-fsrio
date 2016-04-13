@@ -288,7 +288,7 @@ public class NIH {
 					 *  Let us see if we can find the investigator in the already existing data. 
 					 */
 					
-					investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
+					investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name,institution_index__inst_id);
 					/**
 					 * Check project data by other fields in case institution and investigator data exist.
 					 * If project does not exist then continue through the loop and do not write into the output spreadsheet.

@@ -287,7 +287,6 @@ public class AHDB {
 				* This is exactly what the following MySQL queries are doing.
 				*/
 				
-				investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname,investigator_index__inv_id,conn,investigator_data__name);
 				
 				/**
 				* Parse institution name and check DB if exists - might be several
@@ -297,6 +296,8 @@ public class AHDB {
 					institution_data__INSTITUTION_NAME = inst;
 					institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname,institution_index__inst_id,conn,institution_data__INSTITUTION_NAME);
 
+					investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname,investigator_index__inv_id,conn,investigator_data__name,institution_index__inst_id);
+					
 					/**
 					 * Check project data by other fields in case institution and investigator data exist.
 					 * If project does not exist then continue through the loop and do not write into the output spreadsheet.
@@ -482,8 +483,8 @@ public class AHDB {
 				* This is exactly what the following MySQL queries are doing.
 				*/
 				
-				investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
 				institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
+				investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn,investigator_data__name,institution_index__inst_id);
 				String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
 				if (status.equals("Found")) continue;
 				
@@ -1111,7 +1112,7 @@ public class AHDB {
 				* This is exactly what the following MySQL queries are doing.
 				*/
 				institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
-				investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
+				investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name,institution_index__inst_id);
 				String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id); 
 				if (status.equals("Found")) continue;
 				
@@ -1265,7 +1266,7 @@ public class AHDB {
 			* This is exactly what the following MySQL queries are doing.
 			*/
 			institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
-			investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
+			investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name,institution_index__inst_id);
 			String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
 			if (status.equals("Found")) continue;
 
