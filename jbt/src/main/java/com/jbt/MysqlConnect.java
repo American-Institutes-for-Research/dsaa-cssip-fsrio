@@ -180,6 +180,33 @@ public class MysqlConnect {
     }
     
     /**
+     * Check if agency index can be retrieved from the current FSRIO Research Projects Database.
+     * This is only applicable to NIH because it has multiple institutes and centers.
+	 * The last Exception except here needs to be ignored because the comment is added within main scraper and by default it is empty string.
+     * If the exception is not ignored it will give multiple "Illegal operation on empty result set."
+	 * 
+     * @param	dbname	FSRIO Research Projects Database name that is defined in config file (typically, process.cfg).
+	 * @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
+	 * @param project__AGENCY_FULL_NAME Full name of the NIH institute/center as retrieved from the file.
+     * @param agency_index__aid Agency ID if agency exists in the FSRIO Research Projects Database. The ID is numeric and assigned based on the agency name.
+     * @return Agency ID if it was found in FSRIO DB. Otherwise, default -1.
+     */
+    public static Integer GetAgencySQL(String dbname, Connection conn, String project__AGENCY_FULL_NAME, int agency_index__aid) {
+    
+    	String GetAgencySQL = "SELECT ID FROM  "+dbname+".agency_data WHERE AGENCY_FULL_NAME LIKE ?;";
+		ResultSet result = null;
+		try {
+			PreparedStatement preparedStmt = conn.prepareStatement(GetAgencySQL);
+			preparedStmt.setString(1, project__AGENCY_FULL_NAME);
+			result = preparedStmt.executeQuery();
+			result.next();
+			agency_index__aid = Integer.parseInt(result.getString(1));
+		}
+		catch (Exception except) {;}
+		return agency_index__aid;
+    }
+    
+    /**
 	* Check if project data exists in the current FSRIO Research Projects Database by the project number, project start date, and project end date. Institution and PI data should also be taken into account as checked above.
 	* The Exception ex here needs to be ignored because by default we assume that the project data does not exist in the database.
 	* If the exception is not ignored it will give multiple "Illegal operation on empty result set."
@@ -208,24 +235,24 @@ public class MysqlConnect {
     	String status = "";
     	if (investigator_index__inv_id == -2 && institution_index__inst_id == -2) {
 	    	query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
-					+ "where p.PROJECT_NUMBER = ? and (p.PROJECT_START_DATE = ? or p.PROJECT_START_DATE is NULL)"
-					+ " and (p.PROJECT_END_DATE = ? or p.PROJECT_END_DATE is NULL);";	
+					+ "where p.PROJECT_NUMBER = ? and p.PROJECT_START_DATE = ?"
+					+ " and p.PROJECT_END_DATE = ?;";	
 	    } else if (investigator_index__inv_id == -2) {
 	    	query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
 					+ "left outer join "+dbname+".institution_index insti on insti.pid = p.id "
-					+ "where p.PROJECT_NUMBER = ? and (p.PROJECT_START_DATE = ? or p.PROJECT_START_DATE is NULL)"
-					+ " and (p.PROJECT_END_DATE = ? or p.PROJECT_END_DATE is NULL) and insti.inst_id = ?;";
+					+ "where p.PROJECT_NUMBER = ? and p.PROJECT_START_DATE = ? "
+					+ " and(p.PROJECT_END_DATE = ? and insti.inst_id = ?;";
 	    } else if (institution_index__inst_id == -2) {
 	    	query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
 					+ "left outer join "+dbname+".investigator_index ii on ii.pid = p.id "
-					+ "where p.PROJECT_NUMBER = ? and (p.PROJECT_START_DATE = ? or p.PROJECT_START_DATE is NULL)"
-					+ " and (p.PROJECT_END_DATE = ? or p.PROJECT_END_DATE is NULL) and ii.inv_id = ?;";
+					+ "where p.PROJECT_NUMBER = ? and p.PROJECT_START_DATE = ?"
+					+ " and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
 	    } else {
 		    query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
 					+ "left outer join "+dbname+".investigator_index ii on ii.pid = p.id "
 					+ "left outer join "+dbname+".institution_index insti on insti.pid = p.id "
-					+ "where p.PROJECT_NUMBER = ? and (p.PROJECT_START_DATE = ? or p.PROJECT_START_DATE is NULL)"
-					+ " and (p.PROJECT_END_DATE = ? or p.PROJECT_END_DATE is NULL) and ii.inv_id = ? and insti.inst_id = ?;";
+					+ "where p.PROJECT_NUMBER = ? and p.PROJECT_START_DATE = ?"
+					+ " and p.PROJECT_END_DATE = ? and ii.inv_id = ? and insti.inst_id = ?;";
 	    }
     	
 		ResultSet result = null;
