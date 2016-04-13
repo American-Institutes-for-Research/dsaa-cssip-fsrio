@@ -46,7 +46,7 @@ public class CampdenBri {
 	* @param links2      Additional web links associated with this scraper provided in the config file (typically, process.cfg). These are not currently used by FSRIO as in the master spreadsheet. The links are "entry points" into the web pages for data on individual projects.
 	* @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
 	* @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
-	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is passed through command line.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 	* 
 	* @return			 String "CampdenBRI" to signify that the scraper is done running.
@@ -96,7 +96,7 @@ public class CampdenBri {
 	* 
 	* @param links       The main web links associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet. The links are "entry points" into the web pages for data on individual projects.
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the campdenMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	*/
 
@@ -304,7 +304,7 @@ public class CampdenBri {
 	* 
 	* @param links       Additional web links associated with this scraper provided in the config file (typically, process.cfg). These are not currently used by FSRIO as in the master spreadsheet. The links are "entry points" into the web pages for data on individual projects.
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the campdenMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	*/
 	public static void scrapeV2(String[] links, String outfolder, Connection conn, String dbname) throws IOException {
