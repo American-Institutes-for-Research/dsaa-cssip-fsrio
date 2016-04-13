@@ -251,7 +251,7 @@ public class MysqlConnect {
 	    	query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
 					+ "left outer join "+dbname+".institution_index insti on insti.pid = p.id "
 					+ "where p.PROJECT_NUMBER = ? and p.PROJECT_START_DATE = ? "
-					+ " and(p.PROJECT_END_DATE = ? and insti.inst_id = ?;";
+					+ " and p.PROJECT_END_DATE = ? and insti.inst_id = ?;";
 	    } else if (institution_index__inst_id == -2) {
 	    	query = "SELECT p.PROJECT_NUMBER FROM "+dbname+".project p "
 					+ "left outer join "+dbname+".investigator_index ii on ii.pid = p.id "
