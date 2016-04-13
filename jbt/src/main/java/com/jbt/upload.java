@@ -30,7 +30,7 @@ public class upload {
 	static DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 	static String currentStamp = dateFormatCurrent.format(current);
 
-	public static void main(File Filename, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+	public static void mainUpload(File Filename, String host, String user, String passwd, String dbname, String logfile) throws IOException {
 		System.out.println("Working on "+Filename);
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);

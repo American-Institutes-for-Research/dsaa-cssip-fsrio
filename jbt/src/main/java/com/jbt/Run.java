@@ -21,7 +21,6 @@ public class Run {
 		prop.load(in);
 		in.close();
 		String outfolder = prop.getProperty("OUTPUT_FOLDER");
-		//Get MySQL credentials
 		String host = prop.getProperty("MYSQL_HOST");
 		String user = prop.getProperty("MYSQL_USERNAME");
 		String passwd =  args[1];
@@ -195,7 +194,7 @@ public class Run {
 		File[] listOfFiles = folder.listFiles();
 		for (int i = 0; i < listOfFiles.length; i++) {
       		if (listOfFiles[i].isFile())
-        		upload.main(listOfFiles[i], host, user, passwd, dbname, logfile);
+        		upload.mainUpload(listOfFiles[i], host, user, passwd, dbname, logfile);
     }
 		
 	}
