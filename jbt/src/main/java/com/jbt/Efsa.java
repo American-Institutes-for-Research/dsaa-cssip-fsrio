@@ -47,7 +47,7 @@ public class Efsa {
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
 	* @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
 	* @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
-	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is passed through command line.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
 	*
@@ -55,13 +55,29 @@ public class Efsa {
 	* @see               Run
 	*/
 	public static String efsaMain(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
-		
+		/**
+		* The gargoylsoftware Web Client is rather capricious and prints out every JavaScript error possible even when they are meaningless for the scraper.
+		* We have to shut down the default logger to make our customized one provide more meaningful messages.
+		*/
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
+		/**
+		* Opening one connection per scraper, as instructed. 
+		*/
 		Connection conn = MysqlConnect.connection(host,user,passwd);
+		/**
+		 * All links to individual projects on this website follow a given pattern in their 'href' property.
+		 */
 		String pat = "en/tender.*?/tender/|en/node/915681";
-		Efsa.scrape(url,pat,outfolder,conn,dbname,logfile);
-		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
+		
+		try {
+			Efsa.scrape(url,pat,outfolder,conn,dbname,logfile);
+		} catch (Exception ex) {
+			System.out.println("Warning: The EFSA scraper did not succeed. This error has not been seen before. Please share the following information with the IT support to troubleshoot:");
+			ex.printStackTrace();
+			System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
+		}
+		MysqlConnect.closeConnection(conn);
 		return "EFSA";
 	}
 	
@@ -71,7 +87,7 @@ public class Efsa {
 	* @param url         The main URL associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet. The link is the "entry point" into the web pages of individual projects.
 	* @param pat		 Regular expressions passed from efsaMain method to match all individual project web page links by their 'href' property.
 	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
-	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param conn        Database connection initiated in the efsaMain method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
 	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
 	*/
