@@ -1,9 +1,4 @@
 package com.jbt;
-
-/* Just one thing needs to be fixed - unicode URLs are not well handled by either Jsoup or HtmlUnit:
- * Those links are logged and can be looked up manually to populate the database with this limited number of projects.
- */
-
 import net.sf.junidecode.Junidecode;
 
 import java.io.BufferedWriter;
@@ -43,25 +38,62 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.opencsv.CSVWriter;
 
 public class Fspb {
+	/**
+	* This method calls scrape function in the FSPB class
+	* 
+	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
+	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
+	* @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
+	* @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
+	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
+	* @see               Run
+	*/
 	public static String fspbMain(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+		/**
+		* Opening one connection per scraper, as instructed. 
+		*/
 		Connection conn = MysqlConnect.connection(host,user,passwd);
+		/**
+		* The gargoylsoftware Web Client is rather capricious and prints out every JavaScript error possible even when they are meaningless for the scraper.
+		* We have to shut down the default logger to make our customized one provide more meaningful messages.
+		*/
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
-				
+		/**
+		* This scraper goes through websites associated with FSPB
+		* All major weblinks are specified in the config file (typically, process.cfg) and can be retrieved/updated there.
+		*/
 		Fspb.scrape(url,outfolder,conn,dbname,logfile);
-		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 		return "FSPB";
 	}
-	
+	/**
+	* This method scrapes the FSPB website.
+	* 
+	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
+	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
+	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
+	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
+*/
 	public static void scrape(String url, String outfolder, Connection conn, String dbname, String logfile) throws IOException {
-		//Get current date to assign filename
+		/**
+		* The date is needed in every subclass for logging and file naming purposes given that implement a customized logger for the most transparent and easiest error handling and troubleshooting.
+		*/
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String currentDateLog = dateFormat.format(current);
-		
+		/**
+		* As seen, the naming convention for the output files is class, method, and current date. This is needed to impose version control and easier data organization for FSRIO staff.
+		*/
 		CSVWriter csvout = new CSVWriter(new FileWriter(outfolder+"FSPB_"+currentStamp+".csv"),'\t');
+		/**
+		* Different websites can provide different information on individual projects that is mapped to the FSRIO Research Projects Database.
+		* The naming convention here is [table name]__[data_field]. It is important to keep this naming convention for the database upload process after the output QA is complete.
+		*/
 		String[] header = {"project__PROJECT_NUMBER","project__PROJECT_TITLE",
 				"project__source_url",
 				"project__PROJECT_START_DATE","project__PROJECT_END_DATE",
@@ -74,15 +106,28 @@ public class Fspb {
 				"agency_index__aid","comment"};
 		
 		csvout.writeNext(header);
-		
+		/**
+		* The following code initiates the webClient and sets timeout at 50000 ms. 
+		* Some websites, particularly Food Standards Agency are notorious for speed of response and require such high timeout value.
+		*/
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_38);
 		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.getOptions().setTimeout(50000);
 		
 		HtmlPage startPage = webClient.getPage(url);
 		Document doc = Jsoup.parse(startPage.asXml());
-		
+		/**
+		* Every web scraper consists of two parts:
+		* 1) identify links to individual project pages
+		* 2) scrape all necessary information from those individual project pages
+		* <p>
+		* The website structure is very different and it is impossible to template anything here from class extends and overrides.
+		*/
 		Elements projLinks = doc.select(".projects");
+		
+		/**
+		* Here is where we finished Part 1: identifying links to individual project pages. We still have to filter out the invalid ones in the loop below.
+		*/
 		for (Element projLink : projLinks) {
 			Document finaldoc = null;
 			try {
@@ -110,7 +155,10 @@ public class Fspb {
 				
 			}
 				
-			//Declare needed strings
+			/**
+			* Every web scraper declares a list of variables that are present in project web pages. 
+			* It is important that different websites can have different lists of data fields..
+			*/
 			String project__PROJECT_NUMBER = "";
 			String project__PROJECT_TITLE = "";
 			String project__source_url = "";
@@ -124,7 +172,9 @@ public class Fspb {
 			int investigator_index__inv_id = -1;
 			String comment = "";
 			
-			//Institution variables
+			/**
+			 * Institution Variables
+			 */
 			String institution_data__INSTITUTION_NAME = "";
 			String institution_data__INSTITUTION_ADDRESS1 = "";
 			String institution_data__INSTITUTION_CITY = "";
@@ -132,20 +182,27 @@ public class Fspb {
 			String institution_data__INSTITUTION_ZIP = "";
 			String institution_data__INSTITUTION_STATE = "";
 			
-			//PI variables
+			/**
+			 * PI variables
+			 */
 			String investigator_data__name = "";
 			
-			//Processing variables
+			/**
+			 * Processing variables
+			 */
 			String piInfo = "";
 			String piLastName = "";
 			String piFirstName = "";
 			String piName = "";
-			String query = "";
 			
-			//Project source URL
+			/**
+			* Very important field - project__source_url - is used in Warning notes and for logging to check back. It is critical during QA too.
+			*/
 			project__source_url = "http://www.safefood.eu"+projLink.attr("href");
 			
-			//Project number
+			/**
+			 * Project Number
+			 */
 			try {
 				project__PROJECT_NUMBER = finaldoc.select("h4:containsOwn(Project Reference)").first().nextElementSibling().text().replace("Project Reference:","");
 			}
@@ -166,20 +223,27 @@ public class Fspb {
 			}
 			
 			
-			//Dates entered and updated
+			/**
+			 * Format date information was entered. 
+			 */
+			
 			DateFormat dateFormatEntered = new SimpleDateFormat("yyyy-MM-dd");
 			String currentEntered = dateFormatEntered.format(current);
 			project__DATE_ENTERED = currentEntered;
 			project__LAST_UPDATE = currentDateLog;
 			
-			//Project title
+			/**
+			 * Check to see if Project title exists, if it doesnt handle the exception and make title blank.
+			 */
 			try {
 				project__PROJECT_TITLE = finaldoc.select("h3").text();
 			}
 			catch (Exception exx) {
 				project__PROJECT_TITLE = "";
 			}
-			//Project objective, investigator and institution
+			/**
+			 *Extract project objective, and clean up.
+			 */
 			Elements projInfo = finaldoc.select("div.detail-page").last().children();
 			for (int indElem=0;indElem<projInfo.size();indElem++) {
 				Element nextSib = projInfo.get(indElem);
@@ -205,7 +269,9 @@ public class Fspb {
 			
 			piInfo = Junidecode.unidecode(piInfo);
 			
-			//Investigator name
+			/**
+			 * Extract and format PI name. 
+			 */
 			piName = piInfo.split(", ")[0];
 			Pattern patTitle = Pattern.compile("Mr\\.? |Dr\\.? |Ms\\.? |Mrs\\.? |Prof\\.? |Professor |Sir ");
 			Matcher matchTitle = patTitle.matcher(piName);
@@ -219,7 +285,9 @@ public class Fspb {
 			investigator_data__name = piLastName+", "+piFirstName;
 			
 			
-			//Institution name plus city
+			/**
+			 * Extract institution name and city
+			 */
 			if (piInfo.split(", ").length == 2) {
 				institution_data__INSTITUTION_NAME = piInfo.split(", ")[1];
 			} else if (piInfo.split(", ").length == 3) {
@@ -244,7 +312,9 @@ public class Fspb {
 				institution_data__INSTITUTION_CITY = piInfo.split(", ")[2];
 			} 
 			
-			//Project dates
+			/**
+			 * Project Dates
+			 */
 			String projCommence = "";
 			String projDura = "";
 			try {
@@ -268,7 +338,9 @@ public class Fspb {
 				continue;
 			}
 			
-			//Convert duration into day counts
+			/**
+			 * Convert duration into day counts
+			 */
 			int projDays = 0;
 			if (projDura.split(" ")[1].startsWith("week")) {
 				projDays = Integer.valueOf(projDura.split(" ")[0])*7;
@@ -277,9 +349,13 @@ public class Fspb {
 			} else if (projDura.split(" ")[1].startsWith("year")) {
 				projDays = Integer.valueOf(projDura.split(" ")[0])*365;
 			} else {
-				//Log an error with dates - projDura
+				/**
+				 * Log an error with dates - projDura
+				 */
 			}
-			
+			/**
+			* Extract just the year from project dates. 
+			*/
 			String startMonth = projCommence.split(" ")[0].replace(",","");
 			project__PROJECT_START_DATE = projCommence.split(" ")[1].replace(",","");
 			
@@ -302,76 +378,14 @@ public class Fspb {
 				
 			}
 			
-			//Check institution in MySQL DB
-			query = "SELECT * from  "+dbname+"institution_data where institution_name like ?;";
-			ResultSet result = null;
-			try {
-				PreparedStatement preparedStmt = conn.prepareStatement(query);
-				preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
-				result = preparedStmt.executeQuery();
-				result.next();
-				institution_index__inst_id = result.getInt(1);
-			}
-			catch (Exception e) {
-
-			}
-
 			
-			//Check PI name in MySQL DB
-			query = "SELECT * FROM  "+dbname+"investigator_data where name like ?;";
-			
-			result = null;
-			try {
-				PreparedStatement preparedStmt = conn.prepareStatement(query);
-				preparedStmt.setString(1, investigator_data__name);
-				result = preparedStmt.executeQuery();
-				result.next();
-				investigator_index__inv_id = result.getInt(1);
-				if (institution_index__inst_id == -1) {
-					String instindex = result.getString(5);
-					String temp = "SELECT * from  "+dbname+"institution_data where id = ?";
-					PreparedStatement preparedStmt1 = conn.prepareStatement(temp);
-					preparedStmt1.setString(1, instindex);
-
-					ResultSet checkInst = preparedStmt1.executeQuery();
-					checkInst.next();
-					String existInst = checkInst.getString(2);
-					Pattern patInst = Pattern.compile(existInst);
-					Matcher matchInst = patInst.matcher(piInfo);
-					if (matchInst.find()) {
-						institution_index__inst_id = Integer.parseInt(instindex);
-					}
-				}
-			}
-			catch (Exception e) {
-				try {
-					query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
-					result = null;
-					PreparedStatement preparedStmt = conn.prepareStatement(query);
-					preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));
-					result = preparedStmt.executeQuery();
-					result.next();
-					investigator_index__inv_id = result.getInt(1);
-					if (institution_index__inst_id == -1) {
-						String instindex = result.getString(5);
-						String temp = "SELECT * from  "+dbname+"institution_data where id = ?";
-						PreparedStatement preparedStmt1 = conn.prepareStatement(temp);
-						preparedStmt1.setString(1, instindex);
-						
-						ResultSet checkInst = preparedStmt1.executeQuery();
-						checkInst.next();
-						String existInst = checkInst.getString(2);
-						Pattern patInst = Pattern.compile(existInst);
-						Matcher matchInst = patInst.matcher(piInfo);
-						if (matchInst.find()) {
-							institution_index__inst_id = Integer.parseInt(instindex);
-						}
-					}
-				}
-				catch (Exception except) {
-					
-				}	
-			}
+			/**
+			* Based on FSRIO guidance, we are checking on several fields whether the project exists in the DB: project number, project start date, project end date, institution names and/or PI name (if applicable).
+			* This is exactly what the following MySQL queries are doing.
+			*/
+			investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
+			institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
+		
 
 			if (institution_index__inst_id == -1) {
 				comment = "It is likely that the awardee institution of this project "
@@ -396,26 +410,15 @@ public class Fspb {
 							+ "The needed investigator fields are empty in this row.";
 				}
 			} else {
-				//Check if project exists in DB
-				query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
-						+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
-				result = null;
-				try {
-					PreparedStatement preparedStmt = conn.prepareStatement(query);
-					preparedStmt.setString(1, project__PROJECT_NUMBER);
-					preparedStmt.setString(2, project__PROJECT_START_DATE);
-					preparedStmt.setString(3, project__PROJECT_END_DATE);
-					preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
-					result = preparedStmt.executeQuery();
-					result.next();
-					String number = result.getString(1);
-					continue;
-				}
-				catch (Exception ex) {;}
+				String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
+				if (status.equals("Found")) continue;
 
 			}
 			
-			//Write resultant values into CSV
+			/**
+			* Outputting all data into tab-separated file. 
+			* To prevent any mishaps with opening the file, replacing all new lines, tabs and returns in the fields where these can occur.
+			*/
 			String[] output = {project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," "),project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," "),
 					project__source_url,
 					project__PROJECT_START_DATE,project__PROJECT_END_DATE,

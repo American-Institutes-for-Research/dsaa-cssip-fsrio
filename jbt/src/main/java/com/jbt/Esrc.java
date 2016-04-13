@@ -31,43 +31,97 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.opencsv.CSVWriter;
 
+
 public class Esrc {
-	public static String esrcMain(String url, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
+	/**
+	* This method calls scrape function in the Esrc class
+	* 
+	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
+	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
+	* @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
+	* @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
+	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
+	* @see               Run
+	*/
+	public static String esrcMain(String url, String outfolder, String host, String user, String passwd, String dbname, String logfile) throws IOException {
+		/**
+		* The gargoylsoftware Web Client is rather capricious and prints out every JavaScript error possible even when they are meaningless for the scraper.
+		* We have to shut down the default logger to make our customized one provide more meaningful messages.
+		*/
 		Logger logger = Logger.getLogger ("");
 		logger.setLevel (Level.OFF);
+		/**
+		* Opening one connection per scraper, as instructed. 
+		*/
 		Connection conn = MysqlConnect.connection(host,user,passwd);
-
-		Esrc.scrape(url,outfolder,conn,dbname);
+		/**
+		* This scraper goes through websites associated with ESRC
+		* All major weblinks are specified in the config file (typically, process.cfg) and can be retrieved/updated there.
+		*/
+		Esrc.scrape(url,outfolder,conn,dbname, logfile);
 		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
 		return "ESRC";
 
 	}
+	/**
+	* This method scrapes the Esrc website.
+	* 
+	* @param url         The main web link associated with this scraper provided in the config file (typically, process.cfg) and retrieved from the FSRIO master spreadsheet.
+	* @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
+	* @param conn        Database connection initiated in the mainAHDB method.
+	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
+	* @param logfile     Path to the log file where IT-related issues are written with meaningful messages. These errors are primarily to be reviewed by IT support rather than data entry experts. The latter group receives warning messages directly in the console.
+*/
 	
-	public static void scrape(String url, String outfolder, Connection conn, String dbname) throws IOException {
-		//Get current date to assign filename
+	public static void scrape(String url, String outfolder, Connection conn, String dbname, String logfile) throws IOException {
+		/**
+		* The date is needed in every subclass for logging and file naming purposes given that implement a customized logger for the most transparent and easiest error handling and troubleshooting.
+		*/
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String currentDateLog = dateFormat.format(current);
-
+		/**
+		* As seen, the naming convention for the output files is class, method, and current date. This is needed to impose version control and easier data organization for FSRIO staff.
+		*/
 		CSVWriter csvout = new CSVWriter(new FileWriter(outfolder+"ESRC_"+currentStamp+".csv"),'\t');
-		
+		/**
+		* Different websites can provide different information on individual projects that is mapped to the FSRIO Research Projects Database.
+		* The naming convention here is [table name]__[data_field]. It is important to keep this naming convention for the database upload process after the output QA is complete.
+		*/
 		String[] header = {"project__PROJECT_NUMBER", "project__PROJECT_TITLE", "project__source_url",
 				"project__PROJECT_START_DATE", "project__PROJECT_END_DATE", "project__PROJECT_OBJECTIVE",
 				"agency_index__aid",
 				"investigator_data__name", "investigator_index__inv_id" };
 		csvout.writeNext(header);
-
+		/**
+		* The following code initiates the webClient and sets timeout at 50000 ms. 
+		* Some websites, particularly Food Standards Agency are notorious for speed of response and require such high timeout value.
+		*/
 		WebClient webClient = new WebClient(BrowserVersion.FIREFOX_38);
 		webClient.getOptions().setThrowExceptionOnScriptError(false);
 		webClient.getOptions().setTimeout(50000);
-		
+		/**
+		* Every web scraper consists of two parts:
+		* 1) identify links to individual project pages
+		* 2) scrape all necessary information from those individual project pages
+		* <p>
+		* The website structure is very different and it is impossible to template anything here from class extends and overrides.
+		*/
 		HtmlPage startPage = webClient.getPage(url);
 		Document doc = Jsoup.parse(startPage.asXml());
 		Elements links = doc.select("a");
-
+		/**
+		* Here is where we finished Part 1: identifying links to individual project pages.
+		*/
 		for (Element link : links) {
+			/**
+			* Every web scraper declares a list of variables that are present in project web pages. 
+			* It is important that different websites can have different lists of data fields..
+			*/
 			String project__PROJECT_NUMBER = "";
 			String project__PROJECT_TITLE = "";
 			String project__source_url = "";
@@ -80,23 +134,30 @@ public class Esrc {
 			String agency_index__aid = "81";
 			String investigator_data__name = "";
 			int investigator_index__inv_id = -1;
-
+			int institution_index__inst_id = -2;
 			String comment = "";
 
-			//Institution variables
+			/**
+			 * Institution Variables
+			 */
 			String institution_data__INSTITUTION_NAME = "";
 			String institution_data__INSTITUTION_COUNTRY = "184";
 
-			//Processing variables
-			String query = null;
+			/**
+			 * Processing Variables
+			 */
 			String piName = null;
 			String piLastName = null;
 			String piFirstName = null;
-			
-			//Project source URL
+			/**
+			* In this website, the list of project links can also have some grants. We pass them here
+			*/
 			if (!link.attr("href").startsWith("/grants")) {
 				continue;
 			}
+			/**
+			* Very important field - project__source_url - is used in Warning notes and for logging to check back. It is critical during QA too.
+			*/
 			project__source_url = "http://researchcatalogue.esrc.ac.uk/"+link.attr("href");
 
 			
@@ -108,7 +169,9 @@ public class Esrc {
 			
 			project__PROJECT_START_DATE = finaldoc.select("dt:contains(Start date) + dd").first().text();
 			project__PROJECT_END_DATE = finaldoc.select("dt:contains(End date) + dd").first().text();
-			
+			/**
+			* Extract just the year from project dates. 
+			*/
 			try {
 				project__PROJECT_START_DATE = project__PROJECT_START_DATE.substring(project__PROJECT_START_DATE.length()-4);
 				project__PROJECT_END_DATE = project__PROJECT_END_DATE.substring(project__PROJECT_END_DATE.length()-4);
@@ -128,61 +191,20 @@ public class Esrc {
 			project__PROJECT_OBJECTIVE =  finaldoc.select("div[class=col-sm-9]").select("p[class!=list-group-item-text][div[role!=tabpanel]],li[role!=presentation]").text();
 			int in = project__PROJECT_OBJECTIVE.indexOf("Sort by:");
 			if (in != -1)  project__PROJECT_OBJECTIVE = project__PROJECT_OBJECTIVE.substring(0,in);
-			
-			//Check in DB whether PI exists
-			String GetInvestigatorSQL = "SELECT ID FROM " + dbname + ".investigator_data WHERE NAME LIKE \"" +  investigator_data__name + "\";";
-			ResultSet rs6 = null;
-			try {
-				rs6.next();
-				investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
-			}
-			catch (Exception e) {
-				query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
-				ResultSet result = null;
-				try {
-					PreparedStatement preparedStmt = conn.prepareStatement(query);
-					preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));
-					result= preparedStmt.executeQuery();
-					result.next();
-					investigator_index__inv_id = result.getInt(1);
-				}
-				catch (Exception except) {;}	
-			}
-
-			//Project number check within DB	
-			query = "SELECT PROJECT_NUMBER FROM  "+dbname+"project where PROJECT_NUMBER = ?";
-			ResultSet result = null;
-			try {
-				PreparedStatement preparedStmt = conn.prepareStatement(query);
-				preparedStmt.setString(1, project__PROJECT_NUMBER);
-				result= preparedStmt.executeQuery();
-				result.next();
-				String number = result.getString(1);
-				continue;
-			}
-			catch (Exception ex) {;}
+			/**
+			* Based on FSRIO guidance, we are checking on several fields whether the project exists in the DB: project number, project start date, project end date, institution names and/or PI name (if applicable).
+			* This is exactly what the following MySQL queries are doing.
+			*/
+			investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
+			institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
+		
+			String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
+			if (status.equals("Found")) continue;
 
 			
-			if (investigator_index__inv_id == -1) {
-				
-			} else {
-				//Check if project exists in DB
-				query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
-						+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
-				result = null;
-				try {
-					PreparedStatement preparedStmt = conn.prepareStatement(query);
-					preparedStmt.setString(1, project__PROJECT_NUMBER);
-					preparedStmt.setString(2, project__PROJECT_START_DATE);
-					preparedStmt.setString(3, project__PROJECT_END_DATE);
-					preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
-					result= preparedStmt.executeQuery();
-					result.next();
-					String number = result.getString(1);
-					continue;
-				}
-				catch (Exception ex) {;}
-			}
+			/**
+			* Outputting all data into tab-separated file. 
+			*/
 			
 			project__LAST_UPDATE = dateFormat.format(current);
 			DateFormat dateFormatEnter = new SimpleDateFormat("yyyy-MM-dd");
