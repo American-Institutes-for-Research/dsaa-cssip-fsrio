@@ -5,9 +5,12 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+/**
+ * This class has a number of reusable methods to query the MySQL FSRIO database and check whether any projects that are currently being scraped already exist there. 
+ */
 
 public class MysqlConnect {
 	public static Connection connection(String host, String user, String passwd) {
