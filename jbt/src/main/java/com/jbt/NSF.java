@@ -28,31 +28,87 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
-
+/**
+* This class parses the files related to the National Science Foundation.
+* Returns String "NSF" when it done. The class writes output directly into the tab-separate spreadsheet for review and quality control.
+* Utilizes the files retrieved from NIH ExPORTER website and put into specific data folders, and requires several parameters specified in the main Run class.
+*/
 public class NSF {
-	
+
+	/**
+	 * This method calls all the parser associated with the National Science Foundation XML files.
+	 * The files are typically loaded and unzipped into the Data/NSF folder.
+	 * The folder path can be changed in the config file (typically, process.cfg).
+	 * 
+	 * @param inputfolder This is the folder where input files with project-related information are located (typically, Data/NSF).
+	 * @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
+	 * @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
+ 	 * @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+ 	 * @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is passed through command line.
+	 * @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
+	 * @return			  String "NSF" to signify that the scraper is done running.
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws ParserConfigurationException
+	 */
 	public static String nsfMain(String inputfolder, String outfolder, String host, String user, String passwd, String dbname) throws IOException,SAXException,ParserConfigurationException {
+		/**
+		* Opening one connection per class, as instructed. 
+		*/
 		Connection conn = MysqlConnect.connection(host,user,passwd);
-		scrape(outfolder,inputfolder,conn,dbname);
-		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}	
+		try {
+			scrape(outfolder,inputfolder,conn,dbname);
+		} catch (Exception ex) {
+			System.out.println("Warning: The NSF files were not parsed correctly. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:");
+			ex.printStackTrace();
+			System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
+		}
+		
+		MysqlConnect.closeConnection(conn);
 		return "NSF";
 
 	}
 	
+	/**
+	 * This method reads through the input folders and generates list of files within them.
+	 * @param dir	Directory specified by the method calling.
+	 * @return List of files in the directory.
+	 */
 	public static File[] getFiles(String dir) {
 		File[] files = new File(dir).listFiles();
 		return files;
 	}
-
+	
+	/**
+	 * This method parses all project-related information from NSF files.
+	 * 
+	 * @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
+	 * @param inputfolder This is the folder where input files with project-related information are located (typically, Data/NSF).
+	 * @param conn        Database connection initiated in the ahdbMain method.
+     * @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws ParserConfigurationException
+	 */
 	public static void scrape(String outfolder, String inputfolder, Connection conn, String dbname) throws IOException,SAXException,ParserConfigurationException {
+		/**
+		* The date is needed in every subclass for logging and file naming purposes given that a customized logger is implemented for the most transparent and easiest error handling and troubleshooting.
+		*/
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String currentDateLog = dateFormat.format(current);
-
+		
+		/**
+		* As seen, the naming convention for the output files is class, method, and current date. This is needed to impose version control and easier data organization for FSRIO staff.
+		*/
 		CSVPrinter csvout = new CSVPrinter(new FileWriter(outfolder+"NSF_"+currentStamp+".csv"), CSVFormat.EXCEL.withDelimiter('\t'));
-
+		
+		/**
+		* Different sources can provide different information on individual projects that is mapped to the FSRIO Research Projects Database.
+		* The naming convention here is [table name]__[data_field]. It is important to keep this naming convention for the database upload process after the output QA is complete.
+		*/
 		String[] header = {"project__PROJECT_NUMBER", "project__PROJECT_TITLE", 
 				"project__PROJECT_OBJECTIVE", "project__PROJECT_START_DATE", "project__PROJECT_END_DATE",
 				"institution_data__INSTITUTION_COUNTRY",
@@ -63,28 +119,32 @@ public class NSF {
 				"project__source_url", "agency_index__aid"};
 		
 		csvout.printRecord(header);
-
+		
+		/**
+		 * Getting the list of files from abstracts inputfolder.
+		 */
 		File[] files = getFiles(inputfolder);
 		for (File file : files) {
 			if (file.getName().endsWith("xml")) {
 				DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 				DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
 				Document doc = dBuilder.parse(file);
-				//doc.getDocumentElement().normalize();
-	
-				// Get Award Information
+				
+				/**
+				 *  Get Award Information
+				 */
 				Element award = (Element) doc.getElementsByTagName("Award").item(0);
 				
-				//Needed variables
+				/**
+				* Every parser declares a list of variables that are present in the source files. 
+				* It is important that different files and websites can have different lists of data fields. That explains why we do not template, extend and override.
+				*/
 				String project__PROJECT_TITLE = "";
 				String project__PROJECT_NUMBER = "";
-				String project__PROJECT_FUNDING = "";
 				String project__PROJECT_ABSTRACT = "";
 				String project__PROJECT_START_DATE = "";
 				String project__PROJECT_END_DATE = "";
 				String project_awardInstrument = "";
-				String project__LAST_UPDATE = "";
-				String project__DATE_ENTERED = "";
 				int project__ACTIVITY_STATUS = 0;
 				String project__PROJECT_OBJECTIVE = "";
 				String institution_data__INSTITUTION_ZIP = "";
@@ -98,19 +158,30 @@ public class NSF {
 				String states__states_abbrv = "";
 				String investigator_data__EMAIL_ADDRESS = "";
 				String investigator_data__name = "";
+				int institution_index__inst_id = -1; 
+				int investigator_index__inv_id = -1;
+				String institution_data__INSTITUTION_COUNTRY = "";
+				String institution_data__INSTITUTION_STATE = ""; 
 				int flag  = 0;
 				
 				if(award != null) {
 					
-					//Project number	
+					/**
+					 * Project number	
+					 */
 					project__PROJECT_NUMBER = award.getElementsByTagName("AwardID").item(0).getTextContent();
 					
-						
+					/**
+					 * Project title and objective	
+					 */
 					project__PROJECT_TITLE = award.getElementsByTagName("AwardTitle").item(0).getTextContent();
 					project__PROJECT_OBJECTIVE = award.getElementsByTagName("AbstractNarration").item(0).getTextContent().replace("<br/>"," ");
 	
 					String project__PROJECT_TITLE1 = project__PROJECT_TITLE.toLowerCase() + project__PROJECT_ABSTRACT.toLowerCase();
 					
+					/**
+					 * Check whether this is a food safety project. If not, continue.
+					 */
 					if(!(project__PROJECT_TITLE1.contains("food safety") || project__PROJECT_TITLE1.contains("feed safety") || 
 							project__PROJECT_TITLE1.contains("food protection") || project__PROJECT_TITLE1.contains("foodborne") || 
 							project__PROJECT_TITLE1.contains("salmonella") || project__PROJECT_TITLE1.contains("escherichia coli") || 
@@ -143,36 +214,34 @@ public class NSF {
 						
 					
 	
-						project__PROJECT_FUNDING = award.getElementsByTagName("AwardAmount").item(0).getTextContent();
-						
-						//Get years for start and end of award
-						Pattern patDate = Pattern.compile("(\\d+)$");
-						String projStart = award.getElementsByTagName("AwardEffectiveDate").item(0).getTextContent();
-						project__PROJECT_START_DATE = projStart.substring(projStart.length()-4);
-						String projEnd = award.getElementsByTagName("AwardExpirationDate").item(0).getTextContent();
-						project__PROJECT_END_DATE = projEnd.substring(projEnd.length()-4);
-						
-						project_awardInstrument = award.getElementsByTagName("AwardInstrument").item(0).getTextContent();
-		
-						dateNow = new Date();
-						Date dateProj = new Date(projEnd);
-						long diff = dateNow.getTime() - dateProj.getTime();
-						long days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
-						if (days >= 0) {
-							if(project_awardInstrument.toLowerCase().contains("continuing"))
-								project__ACTIVITY_STATUS = 5;
-							else
-								project__ACTIVITY_STATUS = 1;
-						}
-						else
-							project__ACTIVITY_STATUS = 4;
-	
+					/**
+					 * Get years for start and end of award
+					 */
+					Pattern patDate = Pattern.compile("(\\d+)$");
+					String projStart = award.getElementsByTagName("AwardEffectiveDate").item(0).getTextContent();
+					project__PROJECT_START_DATE = projStart.substring(projStart.length()-4);
+					String projEnd = award.getElementsByTagName("AwardExpirationDate").item(0).getTextContent();
+					project__PROJECT_END_DATE = projEnd.substring(projEnd.length()-4);
 					
-					project__LAST_UPDATE = dateFormat.format(current);
-					DateFormat dateFormatEnter = new SimpleDateFormat("yyyy-MM-dd");
-					project__DATE_ENTERED = dateFormatEnter.format(current);
-		
-					// Get Investigator information
+					project_awardInstrument = award.getElementsByTagName("AwardInstrument").item(0).getTextContent();
+	
+					dateNow = new Date();
+					Date dateProj = new Date(projEnd);
+					long diff = dateNow.getTime() - dateProj.getTime();
+					long days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+					if (days >= 0) {
+						if(project_awardInstrument.toLowerCase().contains("continuing"))
+							project__ACTIVITY_STATUS = 5;
+						else
+							project__ACTIVITY_STATUS = 1;
+					}
+					else
+						project__ACTIVITY_STATUS = 4;
+
+					
+					/**
+					 *  Get Investigator information
+					 */
 					Element investigator = (Element) doc.getElementsByTagName("Investigator").item(0);
 					String FirstName = null;
 					String LastName = null;
@@ -187,7 +256,9 @@ public class NSF {
 						investigator_data__name = LastName + ", " + FirstName;
 		
 		
-					// Get Institution information
+					/**
+					 *  Get Institution information
+					 */
 					Element institution = (Element) doc.getElementsByTagName("Institution").item(0);
 
 					if(institution != null) {
@@ -199,141 +270,36 @@ public class NSF {
 						institution_data__INSTITUTION_ZIP = institution.getElementsByTagName("ZipCode").item(0).getTextContent().substring(0,4);
 						institution_data__INSTITUTION_ADDRESS1 = institution.getElementsByTagName("StreetAddress").item(0).getTextContent();
 					}
-		
-		
-					// See if the institution ID exists, if not make it -1 to reflect we need to add.
-					int institution_index__inst_id = -1; 
-					String GetInstIDsql = "SELECT ID FROM  "+dbname+"institution_data WHERE INSTITUTION_NAME = ?;";
-					ResultSet rs = null;
-					try {
-						PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
-						preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
-						rs = preparedStmt.executeQuery();
-						rs.next();
-						institution_index__inst_id = Integer.parseInt(rs.getString(1));
-					}
-					catch (Exception e) {
-
-					}
-
-		
-					// See if the country ID exists, if not make it -1 to reflect we need to add.
-					int institution_data__INSTITUTION_COUNTRY = -1; 
-					String GetcountryIDsql = "SELECT ID FROM  "+dbname+"countries WHERE COUNTRY_NAME = ?;";
-					ResultSet rs2 = null;
-					try {
-						PreparedStatement preparedStmt = conn.prepareStatement(GetcountryIDsql);
-						preparedStmt.setString(1, countries__COUNTRY_NAME.trim());
-						rs2 = preparedStmt.executeQuery();
-						rs2.next();
-						institution_data__INSTITUTION_COUNTRY = Integer.parseInt(rs2.getString(1));
-					}
-					catch (Exception e) {
-					}
-
-		
-					// See if the state ID exists, if not make it -1 to reflect we need to add.
-					int institution_data__INSTITUTION_STATE = -1; 
-					String GetstateIDsql = "SELECT ID FROM  "+dbname+"states WHERE abbrv = ?;";
-					ResultSet rs3 = null;
-					try {
-						PreparedStatement preparedStmt = conn.prepareStatement(GetstateIDsql);
-						preparedStmt.setString(1, states__states_abbrv);
-						rs3 = preparedStmt.executeQuery();
-						rs3.next();
-						institution_data__INSTITUTION_STATE = Integer.parseInt(rs3.getString(1));
-					}
-					catch (Exception e) {
-						;
-					}
-
-					// Determining project type.
-					int projecttype__ID = 999;
-					if(project_awardInstrument.toLowerCase().contains("grant")) {
-						projecttype__ID = 3;
-					}
-					else {
-						// Checking to see if project type exists in projecttype table.
-						String GetProjectTypeIDSQL = "SELECT ID FROM  "+dbname+"projecttype WHERE NAME LIKE ?;";
-						ResultSet rs4 = null;
-						try {
-							PreparedStatement preparedStmt = conn.prepareStatement(GetProjectTypeIDSQL);
-							preparedStmt.setString(1, project_awardInstrument);
-							rs4 = preparedStmt.executeQuery();
-							rs4.next();
-							projecttype__ID = Integer.parseInt(rs4.getString(1));
-						}
-						catch (Exception e) {
-							;
-						}
-
-					}
-		
-					// Let us see if we can find the investigator in the already existing data. 
-					// Condition: investigator must belong to the same institution that we just parsed.
-					// We first use email, then name.
-					int investigator_index__inv_id = -1;
-					String GetInvestigatorSQL = "SELECT ID FROM  "+dbname+"investigator_data WHERE EMAIL_ADDRESS LIKE ?;";
-					ResultSet rs5 = null;
-					try {
-						PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
-						preparedStmt.setString(1, investigator_data__EMAIL_ADDRESS);
-						rs5 = preparedStmt.executeQuery();
-						rs5.next();
-						investigator_index__inv_id = Integer.parseInt(rs5.getString(1));
-					}
-					catch (Exception e) {
-						GetInvestigatorSQL = "SELECT ID FROM  "+dbname+"investigator_data WHERE NAME LIKE ?;";
-						ResultSet rs6 = null;
-						try {
-							PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
-							preparedStmt.setString(1, investigator_data__name);
-							rs6 = preparedStmt.executeQuery();
-							rs6.next();
-							investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
-						}
-						catch (Exception ee) {
-							String query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
-							ResultSet result = null;
-							try {
-								PreparedStatement preparedStmt = conn.prepareStatement(query);
-								preparedStmt.setString(1, LastName+", "+FirstName.substring(0,1));
-								result = preparedStmt.executeQuery();
-								result.next();
-								investigator_index__inv_id = result.getInt(1);
-							}
-							catch (Exception except) {;}	
-						}
-					}
-
 					
-					if (investigator_index__inv_id == -1) {
-						
-					} else {
-
-						//Check if project exists in DB
-						String query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
-								+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?";
-						ResultSet result = null;
-						try {
-							PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
-							preparedStmt.setString(1, project__PROJECT_NUMBER);
-							preparedStmt.setString(2, project__PROJECT_START_DATE);
-							preparedStmt.setString(3, project__PROJECT_END_DATE);
-							preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
-							result = preparedStmt.executeQuery();
-							result.next();
-							String number = result.getString(1);
-							continue;
-						}
-						catch (Exception ex) {;}
-
+					/**
+					* Based on FSRIO guidance, we are checking on several fields whether the project exists in the DB: 
+					* project number, project start date, project end date, institution names and/or PI name (if applicable).
+					* This is exactly what the following MySQL queries are doing.
+					*/
 					
-					}
+					investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
+					institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
+					institution_data__INSTITUTION_COUNTRY = MysqlConnect.GetCountrySQL(dbname, countries__COUNTRY_NAME.trim(), conn);
+					institution_data__INSTITUTION_STATE = MysqlConnect.GetStateSQL(dbname, conn, states__states_abbrv);
 					
-					// Create variables that are needed in the tables, but havent been created so far
+					/**
+					 * Check project data by other fields in case institution and investigator data exist.
+					 * If project does not exist then continue through the loop and do not write into the output spreadsheet.
+					 */
+					String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
+					if (status.equals("Found")) continue;
+							
+					/**
+					 *  Create variables that are needed in the tables, but havent been created so far
+					 */
 					String project__source_url ="http://www.nsf.gov/awardsearch/showAward?AWD_ID="+ project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," ") +"&HistoricalAwards=false";
 					String agency_index__aid = "6";
+					
+					/**
+					* Outputting all data into tab-separated file. 
+					* To prevent any mishaps with opening the file, replacing all new lines, tabs and returns in the fields where these can occur.
+					* Will be one institution per line.
+					*/
 					String[] output = {project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," "),project__PROJECT_TITLE.replaceAll("[\\n\\t\\r]"," "),
 							project__PROJECT_OBJECTIVE.replaceAll("[\\n\\t\\r]"," "), project__PROJECT_START_DATE, project__PROJECT_END_DATE,
 							String.valueOf(institution_data__INSTITUTION_COUNTRY),

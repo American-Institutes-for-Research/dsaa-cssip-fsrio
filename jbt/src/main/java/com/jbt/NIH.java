@@ -17,72 +17,137 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.text.WordUtils;
 
-
+/**
+* This class parses the files related to the National Institutes of Health.
+* Returns String "NIH" when it done. The class writes output directly into the tab-separate spreadsheet for review and quality control.
+* Utilizes the files retrieved from NIH ExPORTER website and put into specific data folders, and requires several parameters specified in the main Run class.
+*/
 public class NIH {
-	
+	/**
+	 * NIH ExPORTER provides abstracts and other project-related information in two separate files. We have to match the two to make the parsing complete for the FSRIO Research Projects Database.
+	 */
 	HashMap<String, String> abstracts = new HashMap<String, String>();
 	HashMap<String, String> indexMap = new HashMap<String, String>();
 	
+	/**
+	 * This method calls all the parser associated with the National INstitutes of Health files.
+	 * The files are typically loaded and unzipped into the Data/NIH and Data/NIH/Abstracts folders
+	 * The folder path can be changed in the config file (typically, process.cfg).
+	 * 
+	 * @param inputfolder This is the folder where input files with project-related information are located (typically, Data/NIH).
+	 * @param inputfolder_abstracts This is the folder where input files with project abstracts are located (typically, Data/NIH/Abstracts).
+	 * @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
+	 * @param host        Host name for the server where FSRIO Research Projects Database resides, e.g. "localhost:3306". Parameter is specified in config file. The port is 3306.
+ 	 * @param user        Username for the server where FSRIO Research Projects Database resides. Parameter is specified in config file.
+ 	 * @param passwd      Password for the server where FSRIO Research Projects Database resides. Parameter is passed through command line.
+	 * @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
+	 * @return			 String "NIH" to signify that the scraper is done running.
+	 */
 	public static String nihMain(String inputfolder, String inputfolder_abstracts, String outfolder, String host, String user, String passwd, String dbname) throws IOException {
 		
 		NIH obj  =  new NIH();
+		/**
+		* Opening one connection per class, as instructed. 
+		*/
 		Connection conn = MysqlConnect.connection(host,user,passwd);
-		obj.abstracts(inputfolder_abstracts);
-		obj.projects(outfolder,inputfolder,conn,dbname);
-		if (conn != null) try { conn.close(); } catch (SQLException logOrIgnore) {}		
-
+		try {
+			obj.abstracts(inputfolder_abstracts);
+		} catch (Exception ex) {
+			System.out.println("Warning: The NIH abstracts were not parsed correctly. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:");
+			ex.printStackTrace();
+			System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
+		}
+		try {
+			obj.projects(outfolder,inputfolder,conn,dbname);
+		} catch (Exception ex) {
+			System.out.println("Warning: The NIH project-related information files were not parsed correctly. This error has not been seen before, i.e. not handled separately. Please share the following information with the IT support to troubleshoot:");
+			ex.printStackTrace();
+			System.out.println("It is recommended to re-run this data source at least once more to make sure that no system error is at fault, such as firewall settings or internet connection.");
+		}
+		
+		MysqlConnect.closeConnection(conn);
 		return "NIH";
 	
 	}
 
+	/**
+	 * This method reads through the input folders and generates list of files within them.
+	 * @param dir	Directory specified by the method calling.
+	 * @return List of files in the directory.
+	 */
 	public File[] getFiles(String dir) {
 		File[] files = new File(dir).listFiles();
 
 		return files;
 	}
 
+	/**
+	 * This method parses the abstract information on projects.
+	 * @param inputfolder_abstracts This is the folder where input files with project abstracts are located (typically, Data/NIH/Abstracts).
+	 * @throws IOException
+	 */
 	public void abstracts(String inputfolder_abstracts) throws IOException {
+		/**
+		 * Getting the list of files from abstracts inputfolder.
+		 */
 		File[] files = getFiles(inputfolder_abstracts);
 		for (File file : files) {
 
 			Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(file));
-			try {	
+			if (!file.getName().contains(".csv")) {
+				continue;
+			}
 			for (CSVRecord record : records) {
 					try {
-					
-					abstracts.put(record.get("APPLICATION_ID"), record.get("ABSTRACT_TEXT"));
+						abstracts.put(record.get("APPLICATION_ID"), record.get("ABSTRACT_TEXT"));
 					}
 					catch (Exception e) {
-						
+						System.out.println("WARNING: The file "+file+" does not contain the correct header Column 1: APPLICATION_ID and Column 2: ABSTRACT_TEXT."
+								+ " Please check the mentioned spreadsheet and if it looks okay, add the specified header to the first row; then re-run.");
 					}
-				}
-			} catch (Exception ee) {
-				
 			}
-			
 		}
 	}
-
+	/**
+	 * This method parses all project-related information except abstracts.
+	 * 
+	 * @param outfolder   The folder name specified in the config file (typically, process.cfg) where all output tab-separated files are written.
+	 * @param inputfolder This is the folder where input files with project-related information are located (typically, Data/NIH).
+	 * @param conn        Database connection initiated in the ahdbMain method.
+     * @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file. It is needed in every individual scraper because dbname is specified in MySQL queries checking whether project exists in the DB.
+	 * @throws IOException
+	 */
 	public void projects(String outfolder, String inputfolder,Connection conn, String dbname) throws IOException {
+		/**
+		* The date is needed in every subclass for logging and file naming purposes given that a customized logger is implemented for the most transparent and easiest error handling and troubleshooting.
+		*/
 		Date current = new Date();
 		DateFormat dateFormatCurrent = new SimpleDateFormat("yyyyMMdd");
 		String currentStamp = dateFormatCurrent.format(current);
 		DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		String currentDateLog = dateFormat.format(current);
-
+		
+		/**
+		* As seen, the naming convention for the output files is class, method, and current date. This is needed to impose version control and easier data organization for FSRIO staff.
+		*/
 		CSVPrinter csvout = new CSVPrinter(new FileWriter(outfolder+"NIH_"+currentStamp+".csv"), CSVFormat.EXCEL.withDelimiter('\t'));
 		
+		/**
+		* Different sources can provide different information on individual projects that is mapped to the FSRIO Research Projects Database.
+		* The naming convention here is [table name]__[data_field]. It is important to keep this naming convention for the database upload process after the output QA is complete.
+		*/
 		String[] header = {"project__PROJECT_NUMBER","project__AGENCY_FULL_NAME", "agency_index__aid", 
 				"project__PROJECT_OBJECTIVE", "project__PROJECT_TITLE",
 				"project__PROJECT_START_DATE", "project__PROJECT_END_DATE",
 				"investigator_data__name",
 				"institution_data__INSTITUTION_NAME", "institution_data__INSTITUTION_CITY",
-				"states__states_abbrv","institution_data__INSTITUTION_STATE", "institution_data__INSTITUTION_COUNTRY",
+				"institution_data__INSTITUTION_STATE", "institution_data__INSTITUTION_COUNTRY",
 				"institution_index__inst_id", 
 				"investigator_index__inv_id"};
-		
 		csvout.printRecord(header);
-
+		/**
+		 * Getting the list of files from abstracts inputfolder.
+		 */
 		File[] files = getFiles(inputfolder);
 		for (File file : files) {
 			if (!file.getName().contains(".csv")) {
@@ -90,17 +155,15 @@ public class NIH {
 			}
 			Iterable<CSVRecord> records = CSVFormat.EXCEL.withHeader().parse(new FileReader(file));
 			for (CSVRecord record : records) {
+				/**
+				* Every parser declares a list of variables that are present in the source files. 
+				* It is important that different files and websites can have different lists of data fields. That explains why we do not template, extend and override.
+				*/
 				String project__AGENCY_FULL_NAME = "";
 				String project__PROJECT_OBJECTIVE= "";
-				String countries__COUNTRY_NAME = "";
 				String project__PROJECT_TITLE = "";
 				String project__PROJECT_START_DATE = "";
 				String project__PROJECT_END_DATE = "";
-				String project__PROJECT_FUNDING = "";
-				String project__PROJECT_TYPE = "3";
-				String project__LAST_UPDATE = "";
-				String project__ACTIVITY_STATUS = "0";
-				String project__DATE_ENTERED = "";
 				String investigator_data__name = "";
 				String project__PROJECT_NUMBER = "";
 				String institution_data__INSTITUTION_NAME = "";
@@ -108,17 +171,21 @@ public class NIH {
 				String states__states_abbrv = "";
 				String comment = "";
 				int institution_index__inst_id = -1; 
-				int institution_data__INSTITUTION_STATE = -1; 
+				String institution_data__INSTITUTION_STATE = ""; 
 				int investigator_index__inv_id = -1;
 				int agency_index__aid = -1;
-				
-				//Check if it is food safety at all before proceeding
+				String institution_data__INSTITUTION_COUNTRY = ""; 
+				/**
+				 * Check if it is food safety at all before proceeding. This is done with the NIH Spending Categories.
+				 */
 				String foodFlag = record.get("NIH_SPENDING_CATS");
 				if (!foodFlag.toLowerCase().contains("food safety")) {
 					continue;
 				}
 				
-				// Project information
+				/**
+				 *  Project information
+				 */
 				project__AGENCY_FULL_NAME = WordUtils.capitalize(record.get("IC_NAME").toLowerCase())
 						.replace("Of","of").replace("And", "and")
 						.replace("&", "and").replace("Eunice Kennedy Shriver ", "").replace("Lung, and","Lung and");
@@ -128,91 +195,70 @@ public class NIH {
 						.replace("Seeinstructions): ", "")
 						.replace("DESCRIPTION (provided by applicant)","").trim();
 				project__PROJECT_TITLE = WordUtils.capitalize(record.get("PROJECT_TITLE"),' ','-');
-				project__PROJECT_FUNDING = record.get("TOTAL_COST");
 				project__PROJECT_START_DATE = record.get("PROJECT_START");
 				project__PROJECT_END_DATE = record.get("PROJECT_END");
 				project__PROJECT_NUMBER = record.get("FULL_PROJECT_NUM");
 				
-				Date dateNow = new Date();
-				long days = 0;
-				try {
-					Date dateProj = new Date(project__PROJECT_END_DATE);
-
-					long diff = dateNow.getTime() - dateProj.getTime();
-					days = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
-				}
-				catch (Exception e) {;}
-				
-				if (days >= 0)
-					project__ACTIVITY_STATUS = "1";
-
-				else
-					project__ACTIVITY_STATUS = "4";
-				project__LAST_UPDATE = dateFormat.format(current);
-				DateFormat dateFormatEnter = new SimpleDateFormat("yyyy-MM-dd");
-				project__DATE_ENTERED = dateFormatEnter.format(current);
 				try {
 					project__PROJECT_START_DATE = project__PROJECT_START_DATE.substring(project__PROJECT_START_DATE.length()-4);
 				}
-				catch(Exception e ) {;}
+				catch(Exception e ) {
+					/**
+					 * There is no information in the file - so, the exception should be ignored; it will be obvious in the QA spreadsheet.
+					 */
+					//System.out.println("WARNING: The project start date did not parse correctly; please check in the file "+file+" under FULL_PROJECT_NUM "+project__PROJECT_NUMBER);
+				}
 				
 				try {
 					project__PROJECT_END_DATE = project__PROJECT_END_DATE.substring(project__PROJECT_END_DATE.length()-4);	
 				}
-				catch (Exception e) {;}
-				// Get Institution information
+				catch (Exception e) {
+					/**
+					 * There is no information in the file - so, the exception should be ignored; it will be obvious in the QA spreadsheet.
+					 */
+
+					//System.out.println("WARNING: The project end date did not parse correctly; please check in the file "+file+" under FULL_PROJECT_NUM "+project__PROJECT_NUMBER);
+				}
+				
+				/**
+				 *  Get Institution information
+				 */
 				institution_data__INSTITUTION_NAME = WordUtils.capitalize(record.get("ORG_NAME").toLowerCase(),' ','-','/')
 						.replace("Of","of").replace("And", "and");
+				institution_index__inst_id = MysqlConnect.GetInstitutionSQL(dbname, institution_index__inst_id, conn, institution_data__INSTITUTION_NAME);
 				institution_data__city_name = WordUtils.capitalize(record.get("ORG_CITY").toLowerCase(),' ','-');
-				states__states_abbrv = record.get("ORG_STATE");
-				countries__COUNTRY_NAME = WordUtils.capitalize(record.get("ORG_COUNTRY").toLowerCase(),' ','-');
+				institution_data__INSTITUTION_STATE = record.get("ORG_STATE");
+				institution_data__INSTITUTION_COUNTRY = WordUtils.capitalize(record.get("ORG_COUNTRY").toLowerCase(),' ','-');
 				
-				// See if the institution ID exists, if not make it -1 to reflect we need to add.
-				String GetInstIDsql = "SELECT ID FROM  "+dbname+"institution_data WHERE INSTITUTION_NAME REGEXP ?;";
-				ResultSet rs = null;
-				try {
-					PreparedStatement preparedStmt = conn.prepareStatement(GetInstIDsql);
-					preparedStmt.setString(1, institution_data__INSTITUTION_NAME);
-					rs = preparedStmt.executeQuery();
-					rs.next();
-					institution_index__inst_id = Integer.parseInt(rs.getString(1));
-				}
-				catch (Exception e) {
+				if (institution_index__inst_id == -1) {
 					comment = "Please populate institution fields by exploring the institution named on the project.";
 				}
 
-
-				// See if the country ID exists, if not make it -1 to reflect we need to add.
-				String institution_data__INSTITUTION_COUNTRY = "-1"; 
-				String GetcountryIDsql = "SELECT ID FROM  "+dbname+"countries WHERE COUNTRY_NAME = ?;";
-				ResultSet rs2 = null;
-				try {
-					PreparedStatement preparedStmt = conn.prepareStatement(GetcountryIDsql);
-					preparedStmt.setString(1, countries__COUNTRY_NAME);
-					rs2 = preparedStmt.executeQuery();
-					rs2.next();
-					institution_data__INSTITUTION_COUNTRY = rs2.getString(1);
+				institution_data__INSTITUTION_COUNTRY = MysqlConnect.GetCountrySQL(dbname, institution_data__INSTITUTION_COUNTRY.trim(), conn);
+				if (institution_data__INSTITUTION_COUNTRY.equals("")) {
+					/**
+					 *  Country does not exist in DB --> comment: "Check country field"
+					 */
+					comment = "Please check the country name and respective index in the DB - might be a spelling mistake or new country.";
 				}
-				catch (Exception e) {
-					institution_data__INSTITUTION_COUNTRY = countries__COUNTRY_NAME;
+				
+				if (institution_data__INSTITUTION_COUNTRY.equals("1")) {
+					institution_data__INSTITUTION_STATE = MysqlConnect.GetStateSQL(dbname, conn, institution_data__INSTITUTION_STATE.trim());
 				}
-
-
-				// See if the state ID exists, if not make it -1 to reflect we need to add.
-				String GetstateIDsql = "SELECT ID FROM  "+dbname+"states WHERE abbrv = ?;";
-				ResultSet rs3 = null;
-				try {
-					PreparedStatement preparedStmt = conn.prepareStatement(GetstateIDsql);
-					preparedStmt.setString(1, states__states_abbrv);
-					rs3 = preparedStmt.executeQuery();
-					rs3.next();
-					institution_data__INSTITUTION_STATE = Integer.parseInt(rs3.getString(1));
+				if (institution_data__INSTITUTION_STATE.equals("")) {
+					/**
+					 * Add to comment field rather than just have it there re-write other comments
+					 */
+					if (comment.equals("")) {
+						comment = " Please check the address information in the file "+ file+" to see whether state field is present on project "+project__PROJECT_NUMBER;
+					} else {
+						comment += " Please check the address information in the file "+ file+" to see whether state field is present on project "+project__PROJECT_NUMBER;
+					}
 				}
-				catch (Exception e) {
-					;
-				}
-
-				// Get Investigator information
+				
+				/**
+				 *  Get Investigator information. Could be one to many PIs.
+				 */
 				try {
 					investigator_data__name = record.get("PI_NAMEs");
 				}
@@ -236,71 +282,28 @@ public class NIH {
 				String[] names = investigator_data__name.split(";");
 				for (String s :names) {
 					investigator_data__name = WordUtils.capitalizeFully(s,' ','-','\'');
-					String piLastName = investigator_data__name.split(", ")[0];
-					String piFirstName = investigator_data__name.split(", ")[1];
 
-					// Let us see if we can find the investigator in the already existing data. 
-
-					String GetInvestigatorSQL = "SELECT ID FROM  "+dbname+"investigator_data WHERE NAME LIKE ?;";
-					ResultSet rs6 = null;
-					try {
-						PreparedStatement preparedStmt = conn.prepareStatement(GetInvestigatorSQL);
-						preparedStmt.setString(1, investigator_data__name);
-						rs6 = preparedStmt.executeQuery();
-						rs6.next();
-						investigator_index__inv_id = Integer.parseInt(rs6.getString(1));
-					}
-					catch (Exception e) {
-						String query = "SELECT * FROM  "+dbname+"investigator_data where name regexp ^?;";
-						ResultSet result = null;
-						try {
-							PreparedStatement preparedStmt = conn.prepareStatement(query);
-							preparedStmt.setString(1, piLastName+", "+piFirstName.substring(0,1));
-							result = preparedStmt.executeQuery();
-							result.next();
-							investigator_index__inv_id = result.getInt(1);
-						}
-						catch (Exception except) {;}	
-					}
-
-					if (investigator_index__inv_id == -1) {
-						
-					} else {
-						//Check if project exists in DB
-						String query = "SELECT p.PROJECT_NUMBER FROM  "+dbname+"project p left outer join  "+dbname+"investigator_index ii on ii.pid = p.id where p.PROJECT_NUMBER = ?"
-								+ " and p.PROJECT_START_DATE = ? and p.PROJECT_END_DATE = ? and ii.inv_id = ?;";
-						ResultSet result = null;
-						try {
-							PreparedStatement preparedStmt = conn.prepareStatement(query);
-						
-							preparedStmt.setString(1, project__PROJECT_NUMBER);
-							preparedStmt.setString(2, project__PROJECT_START_DATE);
-							preparedStmt.setString(3, project__PROJECT_END_DATE);
-							preparedStmt.setString(4, String.valueOf(investigator_index__inv_id));
-
-							result = preparedStmt.executeQuery();
-							result.next();
-							String number = result.getString(1);
-							continue;
-						}
-						catch (Exception ex) {;}
-
-					}
-
-					String GetAgencySQL = "SELECT ID FROM  "+dbname+"agency_data WHERE AGENCY_FULL_NAME LIKE ?;";
-					ResultSet rs7 = null;
-					try {
-						PreparedStatement preparedStmt = conn.prepareStatement(GetAgencySQL);
-						preparedStmt.setString(1, project__AGENCY_FULL_NAME);
-						rs7 = preparedStmt.executeQuery();
-						rs7.next();
-						agency_index__aid = Integer.parseInt(rs7.getString(1));
-					}
-					catch (Exception e) {
+					/**
+					 *  Let us see if we can find the investigator in the already existing data. 
+					 */
 					
-					}
-
-
+					investigator_index__inv_id = MysqlConnect.GetInvestigatorSQL(dbname, investigator_index__inv_id, conn, investigator_data__name);
+					/**
+					 * Check project data by other fields in case institution and investigator data exist.
+					 * If project does not exist then continue through the loop and do not write into the output spreadsheet.
+					 */
+					String status = MysqlConnect.GetProjectNumberSQL(dbname, project__PROJECT_NUMBER, conn, project__PROJECT_START_DATE, project__PROJECT_END_DATE, investigator_index__inv_id, institution_index__inst_id);
+					if (status.equals("Found")) continue;
+					/**
+					 * Check agency ID from the FSRIO DB.
+					 */
+					agency_index__aid = MysqlConnect.GetAgencySQL(dbname, conn, project__AGENCY_FULL_NAME.trim(), agency_index__aid);
+					
+					/**
+					* Outputting all data into tab-separated file. 
+					* To prevent any mishaps with opening the file, replacing all new lines, tabs and returns in the fields where these can occur.
+					* Will be one institution per line.
+					*/
 					String[] output = {project__PROJECT_NUMBER.replaceAll("[\\n\\t\\r]"," "), project__AGENCY_FULL_NAME.replaceAll("[\\n\\t\\r]"," "),
 							String.valueOf(agency_index__aid),
 							project__PROJECT_OBJECTIVE.replaceAll("[\\n\\t\\r]"," "), 
@@ -308,7 +311,7 @@ public class NIH {
 							project__PROJECT_START_DATE, project__PROJECT_END_DATE, 
 							investigator_data__name.replaceAll("[\\n\\t\\r]"," "),
 							institution_data__INSTITUTION_NAME.replaceAll("[\\n\\t\\r]"," "), 
-							institution_data__city_name,states__states_abbrv,
+							institution_data__city_name,
 							String.valueOf(institution_data__INSTITUTION_STATE), 
 							institution_data__INSTITUTION_COUNTRY,
 							String.valueOf(institution_index__inst_id),  
