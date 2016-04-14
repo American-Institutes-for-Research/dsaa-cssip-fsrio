@@ -60,7 +60,7 @@ public class upload {
 	 * This method opens a connection the database, loops through the csv files, and uploads new records. 
 	 *  
 	* @param Filename    Name of the file to be uploaded
-	* @param conn        Database connection initiated in the esrcMain method.
+	* @param conn        Database connection initiated in the mainUpload method.
 	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 
 	 */
@@ -134,9 +134,9 @@ public class upload {
 							/**
 							 *  Add the new PI and Inst information to   a dictionary, but only if it is not -1. 
 							 */
-							if (!investigator_index__inv_id.equals("-1"))
+							if (!investigator_index__inv_id.equals("-1") && !investigator_index__inv_id.equals(""))
 								PIS.put(t, investigator_index__inv_id);
-							if (!institution_index__inst_id.equals("-1"))
+							if (!institution_index__inst_id.equals("-1") && !institution_index__inst_id.equals(""))
 								INSTITUTIONS.put(t, institution_index__inst_id);
 							updateRecord(record, result,conn, dbname);
 							}
@@ -180,7 +180,7 @@ public class upload {
 			if(list.isEmpty()) continue;
 			Set<String> values = new HashSet<String>(list);  
 			for (String s2: values) {
-				String insertQuery = "INSERT INTO   "+dbname+".institution_index (pid, inv_id)"
+				String insertQuery = "INSERT INTO   "+dbname+".institution_index (pid, inst_id)"
 						+ " VALUES (?, ?);";
 				String arr[] = {s, s2};
 				MysqlConnect.uploadSQL(arr, conn, insertQuery);
@@ -193,9 +193,9 @@ public class upload {
 	 * This method opens a inserts a new record into the database.  
 	 *  
 	* @param record                            Record to be inserted
-	* @param institution_index__inst_id        The institution id as found in the CSV file
-	* @param institution_index__inst_id        The investigator id as found in the CSV file
-	* @param conn                              Database connection initiated in the esrcMain method.
+	* @param institution_index__inst_id        The institution id as found in the CSV file/ determined using database
+	* @param institution_index__inst_id        The investigator id as found in the CSV file determined using database
+	* @param conn                              Database connection initiated in the mainUpload method.
 	* @param dbname                            Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 
 	 */
@@ -204,8 +204,8 @@ public class upload {
 				+ "PROJECT_START_DATE, PROJECT_END_DATE, PROJECT_FUNDING, PROJECT_TYPE, "
 				+ "PROJECT_KEYWORDS, PROJECT_IDENTIFIERS, PROJECT_COOPORATORS, PROJECT_ABSTRACT, "
 				+ "PROJECT_PUBLICATIONS, other_publications, PROJECT_MORE_INFO, PROJECT_OBJECTIVE,"
-				+ "PROJECT_ACCESSION_NUMBER, ACTIVITY_STATUS, DATE_ENTERED, COMMENTS, AUTO_INDEX_QA,"
-				+ "archive,LAST_UPDATE,  LAST_UPDATE_BY) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+				+ "PROJECT_ACCESSION_NUMBER, ACTIVITY_STATUS, DATE_ENTERED, COMMENTS,"
+				+ "archive,LAST_UPDATE,  LAST_UPDATE_BY) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 		String PROJECT_NUMBER = null;
 		String PROJECT_TITLE = "";
 		String source_url = "";
@@ -224,12 +224,14 @@ public class upload {
 		String  ACTIVITY_STATUS = "";
 		String  DATE_ENTERED = null;	
 		String  COMMENTS = null;
-		String  AUTO_INDEX_QA = "";
 		String  archive = "1";
 		String  LAST_UPDATE = null;	
 		String  LAST_UPDATE_BY = "air";
 		String PROJECT_OBJECTIVE= "";
 		
+		/**
+		 * Extract values from the record to create a query.
+		 */
 		PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record);
 		PROJECT_TITLE = recordGet("project__PROJECT_TITLE", record);
 		source_url = recordGet("project__source_url", record);
@@ -249,7 +251,6 @@ public class upload {
 		ACTIVITY_STATUS = recordGet("project__ACTIVITY_STATUS", record);
 		DATE_ENTERED = currentStamp;
 		COMMENTS = recordGet("project__COMMENTS", record);
-		AUTO_INDEX_QA = recordGet("project__AUTO_INDEX_QA", record);
 		archive = recordGet("project__archive", record);
 		LAST_UPDATE = currentStamp;
 		LAST_UPDATE_BY = recordGet("project__LAST_UPDATE_BY", record);
@@ -267,8 +268,7 @@ public class upload {
 				PROJECT_FUNDING, PROJECT_TYPE, PROJECT_KEYWORDS, PROJECT_IDENTIFIERS, PROJECT_COOPORATORS,
 				Junidecode.unidecode(PROJECT_ABSTRACT), PROJECT_PUBLICATIONS, other_publications, PROJECT_MORE_INFO, 
 				Junidecode.unidecode(PROJECT_OBJECTIVE),PROJECT_ACCESSION_NUMBER, ACTIVITY_STATUS, DATE_ENTERED,
-				COMMENTS, AUTO_INDEX_QA, archive, LAST_UPDATE, LAST_UPDATE_BY};
-
+				COMMENTS, archive, LAST_UPDATE, LAST_UPDATE_BY};
 		MysqlConnect.uploadSQL(arr, conn, insertQuery);
 		/**
 		 * Get the ID for the project just inserted
@@ -292,7 +292,7 @@ public class upload {
 			insertQuery = "INSERT INTO  "+dbname+".investigator_index (pid, inv_id)"
 					+ " VALUES (?, ?);";
 			String arr2 [] = {ID, investigator_index__inv_id};
-			MysqlConnect.uploadSQL(arr2, conn, insertQuery);
+			if (!investigator_index__inv_id.equals("")) MysqlConnect.uploadSQL(arr2, conn, insertQuery);
 
 		}
 		if (!institution_index__inst_id.equals("-1")) {
@@ -302,7 +302,7 @@ public class upload {
 			insertQuery = "INSERT INTO   "+dbname+".institution_index (pid, inst_id)"
 					+ " VALUES (?, ?);";
 			String arr1[] = {ID, institution_index__inst_id};
-			MysqlConnect.uploadSQL(arr1, conn, insertQuery);
+			if (!institution_index__inst_id.equals("")) MysqlConnect.uploadSQL(arr1, conn, insertQuery);
 		}
 				
 	}
@@ -311,7 +311,7 @@ public class upload {
 	 *  
 	* @param record                            Record to be updated
 	* @param result                            Record as it already exists in the database
-	* @param conn                              Database connection initiated in the esrcMain method.
+	* @param conn                              Database connection initiated in the upload method.
 	* @param dbname                            Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 	 */
 	public static void updateRecord(CSVRecord record, ResultSet result,  Connection conn, String dbname) {
@@ -324,7 +324,7 @@ public class upload {
 				+ "PROJECT_START_DATE=?, PROJECT_END_DATE=?, PROJECT_FUNDING=?, PROJECT_TYPE=?, "
 				+ "PROJECT_KEYWORDS =?, PROJECT_IDENTIFIERS=?, PROJECT_COOPORATORS=?, PROJECT_ABSTRACT=?, "
 				+ "PROJECT_PUBLICATIONS=?, other_publications=?, PROJECT_MORE_INFO=?, PROJECT_OBJECTIVE=?,"
-				+ "PROJECT_ACCESSION_NUMBER=?, ACTIVITY_STATUS=?, DATE_ENTERED=?, COMMENTS=?, AUTO_INDEX_QA=?,"
+				+ "PROJECT_ACCESSION_NUMBER=?, ACTIVITY_STATUS=?, DATE_ENTERED=?, COMMENTS=?, "
 				+ "archive=?,LAST_UPDATE=?,  LAST_UPDATE_BY=? where ID = "
 				+ "?;";
 		String PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record);
@@ -345,12 +345,15 @@ public class upload {
 		String  ACTIVITY_STATUS = "";
 		String  DATE_ENTERED = null;	
 		String  COMMENTS = null;
-		String  AUTO_INDEX_QA = "";
 		String  archive = "1";
 		String  LAST_UPDATE = null;	
 		String  LAST_UPDATE_BY = "air";
 		String PROJECT_OBJECTIVE= null;
 	
+		/** 
+		 * If a newer value is found in CSV, that value is used.
+		 * If no new value if found, the value from the existing record in the database is used.
+		 */
 		PROJECT_TITLE = recordGet("project__PROJECT_TITLE", record, result);
 		PROJECT_START_DATE = recordGet("project__PROJECT_START_DATE", record, result);
 		PROJECT_END_DATE = recordGet("project__PROJECT_END_DATE",record, result);
@@ -368,7 +371,6 @@ public class upload {
 		ACTIVITY_STATUS = recordGet("project__ACTIVITY_STATUS", record, result);
 		DATE_ENTERED = currentStamp;
 		COMMENTS = recordGet("project__COMMENTS", record, result);
-		AUTO_INDEX_QA = recordGet("project__AUTO_INDEX_QA", record, result);
 		archive = recordGet("project__archive", record, result);
 		LAST_UPDATE = currentStamp;
 		LAST_UPDATE_BY = recordGet("project__LAST_UPDATE_BY", record, result);
@@ -384,7 +386,7 @@ public class upload {
 		String [] arr = {PROJECT_TITLE, source_url, PROJECT_START_DATE, PROJECT_END_DATE, PROJECT_FUNDING, 
 				PROJECT_TYPE, PROJECT_KEYWORDS, PROJECT_IDENTIFIERS, PROJECT_COOPORATORS, PROJECT_ABSTRACT, 
 				PROJECT_PUBLICATIONS, other_publications, PROJECT_MORE_INFO, PROJECT_OBJECTIVE, PROJECT_ACCESSION_NUMBER,
-				ACTIVITY_STATUS, DATE_ENTERED, COMMENTS, AUTO_INDEX_QA, archive, LAST_UPDATE, LAST_UPDATE_BY, id};
+				ACTIVITY_STATUS, DATE_ENTERED, COMMENTS, archive, LAST_UPDATE, LAST_UPDATE_BY, id};
 		MysqlConnect.uploadSQL(arr, conn, updateQuery);
 	}
 	
@@ -392,7 +394,7 @@ public class upload {
 	 * This method reads in the institution name from the CSV file, and tries to find it in database. If not, the ID is returned. If not, a new record is added and the new ID is returned.
 	 *  
 	* @param record                            Record from the CSV file, whose institute is to be found. 
-	* @param conn                              Database connection initiated in the esrcMain method.
+	* @param conn                              Database connection initiated in the upload method.
 	* @param dbname                            Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 
     * return                                   The ID for the institute
@@ -498,11 +500,14 @@ public class upload {
 		COMMENTS = recordGet("COMMENTS", record);
 		INSTITUTION_URL = recordGet("institution_data__INSTITUTION_URL", record);
 		INSTITUTION_COUNTRY = recordGet("institution_data__INSTITUTION_COUNTRY", record);
-
+		if(!INSTITUTION_ADDRESS1.equals("")) INSTITUTION_ADDRESS1 = Junidecode.unidecode(INSTITUTION_ADDRESS1);
 			
 		String insertQuery = "INSERT INTO  "+dbname+".institution_data (INSTITUTION_NAME, INSTITUTION_DEPARTMENT, INSTITUTION_ADDRESS1, "
 				+ "INSTITUTION_ADDRESS2, INSTITUTION_CITY, INSTITUTION_COUNTRY, INSTITUTION_STATE, "
 				+ "INSTITUTION_ZIP, DATE_ENTERED, COMMENTS, INSTITUTION_URL) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+		if (INSTITUTION_COUNTRY.equals("")) INSTITUTION_COUNTRY = "0";
+		if (INSTITUTION_STATE.equals("")) INSTITUTION_STATE = "0";
+
 		String arr[] = {INSTITUTION_NAME, INSTITUTION_DEPARTMENT, INSTITUTION_ADDRESS1, INSTITUTION_ADDRESS2, 
 				INSTITUTION_CITY, INSTITUTION_COUNTRY, INSTITUTION_STATE, INSTITUTION_ZIP, DATE_ENTERED, COMMENTS,
 				INSTITUTION_URL};
@@ -510,8 +515,9 @@ public class upload {
 		
 		String getID = " SELECT ID FROM  "+dbname+".institution_data WHERE INSTITUTION_NAME = ?;";
 		ResultSet ID =null;
-		
-		String arr1[] = {recordGet("institution_data__INSTITUTION_NAME", record)};
+		String instname = recordGet("institution_data__INSTITUTION_NAME", record);
+		if (!instname.equals("")) instname = Junidecode.unidecode(instname);
+		String arr1[] = {instname};
 		ID = MysqlConnect.uploadSQLResult(arr1, conn, getID);
 		try {
 			ID.next();
@@ -530,7 +536,7 @@ public class upload {
 	 *  
 	* @param record                            Record from the CSV file, whose institute is to be found. 
 	* @param institution_index__inst_id        The institution that the PI belongs to 
-	* @param conn                              Database connection initiated in the esrcMain method.
+	* @param conn                              Database connection initiated in the mainUpload method.
 	* @param dbname                            Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 
     * return                                   The ID for the PI
@@ -600,13 +606,14 @@ public class upload {
 
 		EMAIL_ADDRESS = recordGet("investigator_data__EMAIL_ADDRESS", record);
 		PHONE_NUMBER = recordGet("investigator_data__PHONE_NUMBER", record);
-
+		if(!name.equals("")) name = Junidecode.unidecode(name);
 		String insertQuery = "INSERT INTO  "+dbname+".investigator_data (name, EMAIL_ADDRESS, PHONE_NUMBER, "
 				+ "INSTITUTION, DATE_ENTERED) VALUES (?, ?, ?, ?, ?);";
 		String arr1[] = {name, EMAIL_ADDRESS, PHONE_NUMBER, INSTITUTION, DATE_ENTERED};
 		MysqlConnect.uploadSQL(arr1, conn, insertQuery);
 
 		String getID = "SELECT ID FROM  "+dbname+".investigator_data WHERE name = ? and INSTITUTION = ?;";
+		if(!name.equals("")) name = Junidecode.unidecode(name);
 		String arr2[] = {name, INSTITUTION};
 		ResultSet ID =null;
 		

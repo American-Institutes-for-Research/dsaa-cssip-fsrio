@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import net.sf.junidecode.Junidecode;
+
 /**
  * This class has a number of reusable methods to query the MySQL FSRIO database and check whether any projects that are currently being scraped already exist there. 
  */
@@ -297,16 +299,15 @@ public class MysqlConnect {
      */
     public static void uploadSQL(String arr[], Connection conn, String query) {
     	int size = arr.length;
+    	PreparedStatement preparedStmt  = null;
     	try {
-    		PreparedStatement preparedStmt = conn.prepareStatement(query);
-
-        	for (int i = 1; i < size; i++ ){
-    			preparedStmt.setString(i, arr[i-1]);
+    		 preparedStmt = conn.prepareStatement(query);
+        	for (int i = 0; i < size; i++ ){
+    			preparedStmt.setString(i+1,  arr[i]);
         	}
         	preparedStmt.execute();
     	}
     	catch(Exception e) {
-    		
     	}
 		    }
     
@@ -320,17 +321,18 @@ public class MysqlConnect {
      */
     public static ResultSet uploadSQLResult(String arr[], Connection conn, String query) {
     	int size = arr.length;
+    	PreparedStatement preparedStmt = null;
     	ResultSet result = null;
-    	try {
-    		PreparedStatement preparedStmt = conn.prepareStatement(query);
 
-        	for (int i = 1; i < size; i++ ){
-    			preparedStmt.setString(i, arr[i-1]);
+    	try {
+    		preparedStmt = conn.prepareStatement(query);
+
+        	for (int i = 0; i < size; i++ ){
+    			preparedStmt.setString(i+1, arr[i]);
         	}
         	result = preparedStmt.executeQuery();
     	}
     	catch(Exception e) {
-    		
     	}
 		 return result;
 		 }
