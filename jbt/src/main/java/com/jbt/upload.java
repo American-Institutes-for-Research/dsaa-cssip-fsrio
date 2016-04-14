@@ -15,6 +15,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.Arrays;
 
 import org.apache.commons.collections.MultiMap;
 import org.apache.commons.collections.map.MultiValueMap;
@@ -59,9 +61,9 @@ public class upload {
 	/**
 	 * This method opens a connection the database, loops through the csv files, and uploads new records. 
 	 *  
-	* @param Filename    Name of the file to be uploaded
-	* @param conn        Database connection initiated in the mainUpload method.
-	* @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
+	 * @param fileName    Name of the file to be uploaded
+	 * @param conn        Database connection initiated in the mainUpload method.
+	 * @param dbname      Name of the FSRIO Research Projects Database that is being updated. Parameter is specified in config file.
 
 	 */
 	public static void uploadRecords(File fileName, Connection conn, String dbname)  {
@@ -72,16 +74,18 @@ public class upload {
 			records = CSVFormat.EXCEL.withHeader().withDelimiter('\t').parse(new FileReader(fileName));
 		}
 		catch(IOException e) {
-			System.out.println("WARNING: The file "+fileName+" does was not found. Please make sure that the file exists.");
+			System.out.println("WARNING: The file "+fileName+" was not found. Please make sure that the file exists.");
 		}
 	
 		for (CSVRecord record : records) {
 			String project__PROJECT_NUMBER = "";
+			String project__PROJECT_TITLE = "";
 			/**
 			 * In case the project number is missing, we use the project title. 
 			 */
-			project__PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record);
-			if(project__PROJECT_NUMBER.equals("")) project__PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record);
+			ResultSet dummy = null;
+			project__PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record,dummy);
+			if(project__PROJECT_NUMBER.equals("")) project__PROJECT_TITLE = recordGet("project__PROJECT_TITLE", record,dummy);
 			/**
 			* In case both project number and title are missing, we just leave it blank
 			*/
@@ -89,8 +93,8 @@ public class upload {
 			String investigator_index__inv_id= "";
 			String investigator_data__name ="";
 			String end = "";
-			institution_index__inst_id = recordGet("institution_index__inst_id", record);
-			investigator_index__inv_id = recordGet("investigator_index__inv_id", record);
+			institution_index__inst_id = recordGet("institution_index__inst_id", record,dummy);
+			investigator_index__inv_id = recordGet("investigator_index__inv_id", record,dummy);
 
 			/**
 			 * Based on FSRIO requirements, we first try to get investigator name and institution name combo, however
@@ -107,87 +111,111 @@ public class upload {
 			/**
 			 * See if the project already exists in the database.
 			 */			
-			String query = "SELECT * FROM  "+dbname+".project p left join "
-					+ " "+dbname+".institution_index inst on inst.pid =  p.id left join "
-					+ "  "+dbname+".investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = ? "
-					+ " order by date_entered desc limit 1;";
+			String query = "";
 			ResultSet result = null;
-			String a[] = {project__PROJECT_NUMBER};
-			result = MysqlConnect.uploadSQLResult(a, conn, query);
-			try {
-				result.next();
-				String t = result.getString("ID");
-				String inst = result.getString("inst_id");
-				String investigator = result.getString("inv_id");
-				String endDate = result.getString("PROJECT_END_DATE");
-				
-				if (inst == null) inst = ""; 
-				if (investigator == null) investigator = "";
-				if (endDate == null) endDate = "";
-				if(t == null) t = "";
-				/**
-				 *  AT least one of these things should have real new value, before we update
-				 */
-				if (!t.isEmpty()) {
-					if(!investigator_index__inv_id.equals("-1") || !institution_index__inst_id.equals("-1")) {
-					if (!investigator.equalsIgnoreCase(investigator_index__inv_id) || !inst.equalsIgnoreCase(institution_index__inst_id) || !endDate.equalsIgnoreCase(end))  {
-							/**
-							 *  Add the new PI and Inst information to   a dictionary, but only if it is not -1. 
-							 */
-							if (!investigator_index__inv_id.equals("-1") && !investigator_index__inv_id.equals(""))
-								PIS.put(t, investigator_index__inv_id);
-							if (!institution_index__inst_id.equals("-1") && !institution_index__inst_id.equals(""))
-								INSTITUTIONS.put(t, institution_index__inst_id);
-							updateRecord(record, result,conn, dbname);
-							}
+			
+			if (project__PROJECT_NUMBER.equals("")) {
+				query = "SELECT * FROM  "+dbname+".project p left join "
+						+ " "+dbname+".institution_index inst on inst.pid =  p.id left join "
+						+ "  "+dbname+".investigator_index inv on inv.pid = p.id where PROJECT_TITLE = ? "
+						+ " order by date_entered desc limit 1;";
+				String a[] = {project__PROJECT_TITLE};
+				result = MysqlConnect.uploadSQLResult(a, conn, query);
+			} else {
+				query = "SELECT * FROM  "+dbname+".project p left join "
+						+ " "+dbname+".institution_index inst on inst.pid =  p.id left join "
+						+ "  "+dbname+".investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = ? "
+						+ " order by date_entered desc limit 1;";
+				String a[] = {project__PROJECT_NUMBER};
+				result = MysqlConnect.uploadSQLResult(a, conn, query);
+			}
+			
+			/**
+			 * Can be multiple PIs and institutions per project
+			 */
+			HashMap<String,String> inst = new HashMap<String,String>();
+			HashMap<String,String> investigator = new HashMap<String,String>();
+			String t = "";
+			Integer flag = 0;
+			while (true) {
+				try {
+					result.next();
+					t = result.getString("ID");
+					inst.put(t,result.getString("inst_id"));
+					investigator.put(t,result.getString("inv_id"));
+					if (!t.isEmpty() && !t.equals("")) {
+						flag = 1;
+						updateRecord(record, result,conn, dbname);
 					}
-				}
-				}
-			catch (Exception ex) {
+				} catch (Exception ee) {break;}
+			} 
+			
+			if (flag == 0) {
 				insertRecord(record, institution_index__inst_id, investigator_index__inv_id, conn, dbname);
 			}
 
-		}
+			if(!investigator_index__inv_id.equals("-1") 
+					&& !investigator_index__inv_id.equals("") && !Arrays.asList(investigator.keySet()).contains(investigator_index__inv_id) 
+					&& !t.isEmpty() && !t.equals("")) {
+					/**
+					 *  Add the new PI information to a dictionary, but only if it is not -1. 
+					 */
+					System.out.println(investigator_index__inv_id);
+					System.out.println(t);
+					System.out.println("_____");
+					PIS.put(t,investigator_index__inv_id);
+						
+			}
+			if (!institution_index__inst_id.equals("-1") 
+					&& !institution_index__inst_id.equals("") && !Arrays.asList(inst.keySet()).contains(institution_index__inst_id) 
+					&& !t.isEmpty() && !t.equals("")) {
+						/**
+						 *  Add the new Inst information to a dictionary, but only if it is not -1. 
+						 */
+							INSTITUTIONS.put(t,institution_index__inst_id);
+			}
+		
+			/**
+			 * Now we can update the index tables with all new PI and Institution information.  
+			 */
+			/**
+			 * PI TABLE
+			 */
+			//System.out.println(project__PROJECT_NUMBER);
+			//System.out.println(PIS);
+			Set<String> keys = PIS.keySet();
+			for(String s : keys) {
+				ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
+				if(list == null) continue;
+				if(list.isEmpty()) continue;
+				Set<String> values = new HashSet<String>(list);  
+				for (String s2: values) {
+					String insertQuery = "INSERT INTO   "+dbname+".investigator_index (pid, inv_id)"
+							+ " VALUES (?, ?);";
+					String arr[] = {s, s2};
+					MysqlConnect.uploadSQL(arr, conn, insertQuery);
+				}
 
-		/**
-		 * Now we can update the index tables with all new PI and Institution information.  
-		 */
-		/**
-		 * PI TABLE
-		 */
-		Set<String> keys = PIS.keySet();
-		for(String s : keys) {
-			ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
-			if(list == null) continue;
-			if(list.isEmpty()) continue;
-			Set<String> values = new HashSet<String>(list);  
-			for (String s2: values) {
-				String insertQuery = "INSERT INTO   "+dbname+".investigator_index (pid, inv_id)"
-						+ " VALUES (?, ?);";
-				String arr[] = {s, s2};
-				MysqlConnect.uploadSQL(arr, conn, insertQuery);
 			}
 
-		}
+			/**
+			 * INSTITUTION TABLE
+			 */
+			keys = INSTITUTIONS.keySet();
+			for(String s : keys) {
+				ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
+				if(list == null) continue;
+				if(list.isEmpty()) continue;
+				Set<String> values = new HashSet<String>(list);  
+				for (String s2: values) {
+					String insertQuery = "INSERT INTO   "+dbname+".institution_index (pid, inst_id)"
+							+ " VALUES (?, ?);";
+					String arr[] = {s, s2};
+					MysqlConnect.uploadSQL(arr, conn, insertQuery);
+				}
 
-		/**
-		 * INSTITUTION TABLE
-		 */
-		keys = INSTITUTIONS.keySet();
-		for(String s : keys) {
-			ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
-			if(list == null) continue;
-			if(list.isEmpty()) continue;
-			Set<String> values = new HashSet<String>(list);  
-			for (String s2: values) {
-				String insertQuery = "INSERT INTO   "+dbname+".institution_index (pid, inst_id)"
-						+ " VALUES (?, ?);";
-				String arr[] = {s, s2};
-				MysqlConnect.uploadSQL(arr, conn, insertQuery);
 			}
-
 		}
-
 	}
 	/**
 	 * This method opens a inserts a new record into the database.  
@@ -232,28 +260,29 @@ public class upload {
 		/**
 		 * Extract values from the record to create a query.
 		 */
-		PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record);
-		PROJECT_TITLE = recordGet("project__PROJECT_TITLE", record);
-		source_url = recordGet("project__source_url", record);
-		PROJECT_START_DATE = recordGet("project__PROJECT_START_DATE", record);
-		PROJECT_END_DATE = recordGet("project__PROJECT_END_DATE", record);
-		PROJECT_FUNDING = recordGet("project__PROJECT_FUNDING", record);
-		PROJECT_TYPE = recordGet("project__PROJECT_TYPE", record);
-		PROJECT_KEYWORDS = recordGet("project__PROJECT_KEYWORDS", record);
-		PROJECT_IDENTIFIERS = recordGet("project__PROJECT_IDENTIFIERS", record);
-		PROJECT_COOPORATORS = recordGet("project__PROJECT_COOPORATORS", record);
-		PROJECT_ABSTRACT = recordGet("project__PROJECT_ABSTRACT", record);
-		PROJECT_PUBLICATIONS = recordGet("project__PROJECT_PUBLICATIONS", record);
-		other_publications = recordGet("project__other_publications", record);
-		PROJECT_MORE_INFO = recordGet("project__PROJECT_MORE_INFO", record);
-		PROJECT_ACCESSION_NUMBER = recordGet("project__PROJECT_ACCESSION_NUMBER", record);
-		PROJECT_OBJECTIVE = recordGet("project__PROJECT_OBJECTIVE", record);
-		ACTIVITY_STATUS = recordGet("project__ACTIVITY_STATUS", record);
+		ResultSet dummy = null;
+		PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record,dummy);
+		PROJECT_TITLE = recordGet("project__PROJECT_TITLE", record,dummy);
+		source_url = recordGet("project__source_url", record,dummy);
+		PROJECT_START_DATE = recordGet("project__PROJECT_START_DATE", record,dummy);
+		PROJECT_END_DATE = recordGet("project__PROJECT_END_DATE", record,dummy);
+		PROJECT_FUNDING = recordGet("project__PROJECT_FUNDING", record,dummy);
+		PROJECT_TYPE = recordGet("project__PROJECT_TYPE", record,dummy);
+		PROJECT_KEYWORDS = recordGet("project__PROJECT_KEYWORDS", record,dummy);
+		PROJECT_IDENTIFIERS = recordGet("project__PROJECT_IDENTIFIERS", record,dummy);
+		PROJECT_COOPORATORS = recordGet("project__PROJECT_COOPORATORS", record,dummy);
+		PROJECT_ABSTRACT = recordGet("project__PROJECT_ABSTRACT", record,dummy);
+		PROJECT_PUBLICATIONS = recordGet("project__PROJECT_PUBLICATIONS", record,dummy);
+		other_publications = recordGet("project__other_publications", record,dummy);
+		PROJECT_MORE_INFO = recordGet("project__PROJECT_MORE_INFO", record,dummy);
+		PROJECT_ACCESSION_NUMBER = recordGet("project__PROJECT_ACCESSION_NUMBER", record,dummy);
+		PROJECT_OBJECTIVE = recordGet("project__PROJECT_OBJECTIVE", record,dummy);
+		ACTIVITY_STATUS = recordGet("project__ACTIVITY_STATUS", record,dummy);
 		DATE_ENTERED = currentStamp;
-		COMMENTS = recordGet("project__COMMENTS", record);
-		archive = recordGet("project__archive", record);
+		COMMENTS = recordGet("project__COMMENTS", record,dummy);
+		archive = recordGet("project__archive", record,dummy);
 		LAST_UPDATE = currentStamp;
-		LAST_UPDATE_BY = recordGet("project__LAST_UPDATE_BY", record);
+		LAST_UPDATE_BY = recordGet("project__LAST_UPDATE_BY", record,dummy);
 
 			
 		if (PROJECT_START_DATE.trim().equals("")) PROJECT_START_DATE = null;
@@ -321,56 +350,33 @@ public class upload {
 		}
 		catch(Exception e) {;}
 		String updateQuery = "Update   "+dbname+".project SET PROJECT_TITLE= ?, source_url=?, "
-				+ "PROJECT_START_DATE=?, PROJECT_END_DATE=?, PROJECT_FUNDING=?, PROJECT_TYPE=?, "
-				+ "PROJECT_KEYWORDS =?, PROJECT_IDENTIFIERS=?, PROJECT_COOPORATORS=?, PROJECT_ABSTRACT=?, "
-				+ "PROJECT_PUBLICATIONS=?, other_publications=?, PROJECT_MORE_INFO=?, PROJECT_OBJECTIVE=?,"
-				+ "PROJECT_ACCESSION_NUMBER=?, ACTIVITY_STATUS=?, DATE_ENTERED=?, COMMENTS=?, "
+				+ "PROJECT_START_DATE=?, PROJECT_END_DATE=?, PROJECT_TYPE=?, "
+				+ "ACTIVITY_STATUS=?, DATE_ENTERED=?,  "
 				+ "archive=?,LAST_UPDATE=?,  LAST_UPDATE_BY=? where ID = "
 				+ "?;";
-		String PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record);
+		ResultSet dummy = null;
+		String PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record,dummy);
 		String PROJECT_TITLE = null;
 		String source_url = "";
 		String PROJECT_START_DATE = "";
 		String PROJECT_END_DATE = "";	
-		String PROJECT_FUNDING = "";
 		String PROJECT_TYPE = "";
-		String PROJECT_KEYWORDS = null;
-		String PROJECT_IDENTIFIERS = null;
-		String  PROJECT_COOPORATORS = null;	
-		String  PROJECT_ABSTRACT = null;	
-		String  PROJECT_PUBLICATIONS = null;	
-		String  other_publications = "";
-		String  PROJECT_MORE_INFO = null;
-		String  PROJECT_ACCESSION_NUMBER = null;
 		String  ACTIVITY_STATUS = "";
 		String  DATE_ENTERED = null;	
-		String  COMMENTS = null;
 		String  archive = "1";
 		String  LAST_UPDATE = null;	
 		String  LAST_UPDATE_BY = "air";
-		String PROJECT_OBJECTIVE= null;
 	
 		/** 
 		 * If a newer value is found in CSV, that value is used.
-		 * If no new value if found, the value from the existing record in the database is used.
+		 * If no new value is found, the value from the existing record in the database is used.
 		 */
 		PROJECT_TITLE = recordGet("project__PROJECT_TITLE", record, result);
 		PROJECT_START_DATE = recordGet("project__PROJECT_START_DATE", record, result);
 		PROJECT_END_DATE = recordGet("project__PROJECT_END_DATE",record, result);
-		PROJECT_FUNDING = recordGet("project__PROJECT_FUNDING", record, result);
 		PROJECT_TYPE = recordGet("project__PROJECT_TYPE", record, result);
-		PROJECT_KEYWORDS = recordGet("project__PROJECT_KEYWORDS", record, result);
-		PROJECT_IDENTIFIERS = recordGet("project__PROJECT_IDENTIFIERS", record, result);
-		PROJECT_COOPORATORS = recordGet("project__PROJECT_COOPORATORS", record, result);
-		PROJECT_ABSTRACT = recordGet("project__PROJECT_ABSTRACT", record, result);
-		PROJECT_PUBLICATIONS = recordGet("project__PROJECT_PUBLICATIONS", record, result);
-		other_publications = recordGet("project__other_publications", record, result);
-		PROJECT_MORE_INFO = recordGet("project__PROJECT_MORE_INFO", record, result);
-		PROJECT_OBJECTIVE = recordGet("project__PROJECT_OBJECTIVE", record, result);
-		PROJECT_ACCESSION_NUMBER = recordGet("project__PROJECT_ACCESSION_NUMBER", record, result);
 		ACTIVITY_STATUS = recordGet("project__ACTIVITY_STATUS", record, result);
 		DATE_ENTERED = currentStamp;
-		COMMENTS = recordGet("project__COMMENTS", record, result);
 		archive = recordGet("project__archive", record, result);
 		LAST_UPDATE = currentStamp;
 		LAST_UPDATE_BY = recordGet("project__LAST_UPDATE_BY", record, result);
@@ -378,15 +384,12 @@ public class upload {
 	
 		if (PROJECT_START_DATE!=null) if (PROJECT_START_DATE.trim().equals("")) PROJECT_START_DATE = null;
 		if (PROJECT_END_DATE!=null) if (PROJECT_END_DATE.trim().equals("")) PROJECT_END_DATE = null;
-		if (PROJECT_FUNDING!=null) if (PROJECT_FUNDING.trim().equals("")) PROJECT_FUNDING = null;
 		if (PROJECT_TYPE!=null) if (PROJECT_TYPE.trim().equals("")) PROJECT_TYPE = null;
 		if (ACTIVITY_STATUS!=null) if (ACTIVITY_STATUS.trim().equals("")) ACTIVITY_STATUS = null;
 		if (archive!=null) if (archive.trim().equals("")) archive = "1";
 
-		String [] arr = {PROJECT_TITLE, source_url, PROJECT_START_DATE, PROJECT_END_DATE, PROJECT_FUNDING, 
-				PROJECT_TYPE, PROJECT_KEYWORDS, PROJECT_IDENTIFIERS, PROJECT_COOPORATORS, PROJECT_ABSTRACT, 
-				PROJECT_PUBLICATIONS, other_publications, PROJECT_MORE_INFO, PROJECT_OBJECTIVE, PROJECT_ACCESSION_NUMBER,
-				ACTIVITY_STATUS, DATE_ENTERED, COMMENTS, archive, LAST_UPDATE, LAST_UPDATE_BY, id};
+		String [] arr = {PROJECT_TITLE, source_url, PROJECT_START_DATE, PROJECT_END_DATE, 
+				PROJECT_TYPE, ACTIVITY_STATUS, DATE_ENTERED, archive, LAST_UPDATE, LAST_UPDATE_BY, id};
 		MysqlConnect.uploadSQL(arr, conn, updateQuery);
 	}
 	
@@ -401,8 +404,9 @@ public class upload {
 	 */
 	public static String checkAddInst(CSVRecord record, Connection conn, String dbname) {
 		String institution_data__INSTITUTION_NAME = "";
+		ResultSet dummy = null;
 		try {
-			institution_data__INSTITUTION_NAME = recordGet("institution_data__INSTITUTION_NAME", record);
+			institution_data__INSTITUTION_NAME = recordGet("institution_data__INSTITUTION_NAME", record,dummy);
 		}
 		catch (Exception e) {return "-1";}
 		if (institution_data__INSTITUTION_NAME == "") return "-1";
@@ -412,7 +416,7 @@ public class upload {
 		 */
 		
 		/**
-		 * Get all institutions
+		 * Get all institutions to apply a matching algorithm based on Jaro-Winkler distance: a bit of on-the-fly disambiguation here.
 		 */
 		ResultSet institutes = null;
 		String GetInsts = "SELECT ID, INSTITUTION_NAME FROM   "+dbname+".institution_data;";
@@ -487,19 +491,19 @@ public class upload {
 		String DATE_ENTERED = currentStamp;
 		String INSTITUTION_URL = "";
 
-		INSTITUTION_DEPARTMENT = recordGet("institution_data__INSTITUTION_DEPARTMENT", record);
-		INSTITUTION_ADDRESS1 = recordGet("institution_data__INSTITUTION_ADDRESS1", record);
-		INSTITUTION_ADDRESS2 = recordGet("institution_data__INSTITUTION_ADDRESS2", record);
-		INSTITUTION_CITY = recordGet("institution_data__INSTITUTION_CITY", record);
-		INSTITUTION_STATE = recordGet("institution_data__INSTITUTION_STATE", record);
+		INSTITUTION_DEPARTMENT = recordGet("institution_data__INSTITUTION_DEPARTMENT", record,dummy);
+		INSTITUTION_ADDRESS1 = recordGet("institution_data__INSTITUTION_ADDRESS1", record,dummy);
+		INSTITUTION_ADDRESS2 = recordGet("institution_data__INSTITUTION_ADDRESS2", record,dummy);
+		INSTITUTION_CITY = recordGet("institution_data__INSTITUTION_CITY", record,dummy);
+		INSTITUTION_STATE = recordGet("institution_data__INSTITUTION_STATE", record,dummy);
 		try {
 				int stateID = Integer.parseInt(INSTITUTION_STATE);
 		}
 		catch (Exception e) {
 		INSTITUTION_STATE = "";			}
-		COMMENTS = recordGet("COMMENTS", record);
-		INSTITUTION_URL = recordGet("institution_data__INSTITUTION_URL", record);
-		INSTITUTION_COUNTRY = recordGet("institution_data__INSTITUTION_COUNTRY", record);
+		COMMENTS = recordGet("COMMENTS", record,dummy);
+		INSTITUTION_URL = recordGet("institution_data__INSTITUTION_URL", record,dummy);
+		INSTITUTION_COUNTRY = recordGet("institution_data__INSTITUTION_COUNTRY", record,dummy);
 		if(!INSTITUTION_ADDRESS1.equals("")) INSTITUTION_ADDRESS1 = Junidecode.unidecode(INSTITUTION_ADDRESS1);
 			
 		String insertQuery = "INSERT INTO  "+dbname+".institution_data (INSTITUTION_NAME, INSTITUTION_DEPARTMENT, INSTITUTION_ADDRESS1, "
@@ -515,7 +519,7 @@ public class upload {
 		
 		String getID = " SELECT ID FROM  "+dbname+".institution_data WHERE INSTITUTION_NAME = ?;";
 		ResultSet ID =null;
-		String instname = recordGet("institution_data__INSTITUTION_NAME", record);
+		String instname = recordGet("institution_data__INSTITUTION_NAME", record,dummy);
 		if (!instname.equals("")) instname = Junidecode.unidecode(instname);
 		String arr1[] = {instname};
 		ID = MysqlConnect.uploadSQLResult(arr1, conn, getID);
@@ -545,18 +549,20 @@ public class upload {
 
 	public static String getPIid(CSVRecord record, String institution_index__inst_id, Connection conn, String dbname) {
 		String investigator_data__name = "";
+		ResultSet dummy = null;
 		try {
-			investigator_data__name = recordGet("investigator_data__name", record);
+			investigator_data__name = recordGet("investigator_data__name", record,dummy);
 		}
 		catch(Exception e) {;}
 		if (investigator_data__name.equals("")) return "-1";
 		String query = "";
+		/**
+		 * Some data sources do not have any institution information - so, we just want to make sure that in those cases we still upload PI info.
+		 */
 		if (!institution_index__inst_id.equalsIgnoreCase("-1")) {
 			query = "SELECT ID, name FROM   "+dbname+".investigator_data where INSTITUTION = ?;";
 			
-		}
-			
-		else {
+		} else {
 			query = "SELECT ID, name FROM   "+dbname+".investigator_data where INSTITUTION != ?;";
 		}
 			
@@ -601,11 +607,12 @@ public class upload {
 		String EMAIL_ADDRESS = "";
 		String PHONE_NUMBER = "";
 		String INSTITUTION = institution_index__inst_id;
-		if (INSTITUTION.equalsIgnoreCase("")) INSTITUTION="0"; 
+		if (INSTITUTION.equalsIgnoreCase("")) INSTITUTION=null; 
 		String DATE_ENTERED = currentStamp;
 
-		EMAIL_ADDRESS = recordGet("investigator_data__EMAIL_ADDRESS", record);
-		PHONE_NUMBER = recordGet("investigator_data__PHONE_NUMBER", record);
+		
+		EMAIL_ADDRESS = recordGet("investigator_data__EMAIL_ADDRESS", record,dummy);
+		PHONE_NUMBER = recordGet("investigator_data__PHONE_NUMBER", record,dummy);
 		if(!name.equals("")) name = Junidecode.unidecode(name);
 		String insertQuery = "INSERT INTO  "+dbname+".investigator_data (name, EMAIL_ADDRESS, PHONE_NUMBER, "
 				+ "INSTITUTION, DATE_ENTERED) VALUES (?, ?, ?, ?, ?);";
@@ -629,22 +636,7 @@ public class upload {
 		return finalID;
 	}
 	
-	/**
-	 * This method returns the value of column x in the CSVRecord. If x is not a column in the CSV, empty string is returned
-	 
-	 * @param x                                 Value to be looked up in the CSVRecord
-	 * @param record                            Record from the CSV file,  where x is to be found
-
-    * return                                   The value of x found in CSVRecord
-	 */
-	public static String recordGet(String x, CSVRecord record) {
-		String y = "";
-		try {
-			y = record.get(x);
-		}
-		catch(Exception e) {;}
-		return y;
-	}
+	
 	/**
 	 * This method returns the value of column x in the CSVRecord. If x is not a column in the CSV,
 	 * it looks for x in the ResultSet. If not found there, an empty string is returned
@@ -653,18 +645,19 @@ public class upload {
 	 * @param record                            Record from the CSV file,  where x is to be found
 	 * @param result                            Record from the ResultSet,  where x is to be found
 
-    * return                                   The value of x found in CSVRecord or ResultSet
+     * @return                                  The value of x found in CSVRecord or ResultSet
 	 */
 	public static String recordGet(String x, CSVRecord record,  ResultSet result) {
 		String y = "";
 		try {
 			y = record.get(x);
 		}
-		catch(Exception e) { try {
+		catch(Exception e) { 
+			try {
 			y = result.getString(x);
-		}
-			catch(Exception e1) {}
 			}
+			catch(Exception e1) {;}
+		}
 		return y;
 	}
 }
