@@ -156,22 +156,17 @@ public class upload {
 				insertRecord(record, institution_index__inst_id, investigator_index__inv_id, conn, dbname);
 			}
 
-			
 			if(!investigator_index__inv_id.equals("-1") 
-					&& !investigator_index__inv_id.equals("") && !Arrays.asList(investigator.keySet()).contains(investigator_index__inv_id)
+					&& !investigator_index__inv_id.equals("") && !investigator.keySet().contains(investigator_index__inv_id)
 					&& !t.isEmpty() && !t.equals("")) {
 					/**
 					 *  Add the new PI information to a dictionary, but only if it is not -1. 
 					 */
-					System.out.println(investigator);
-					System.out.println(investigator_index__inv_id);
-					System.out.println(t);
-					
 					PIS.put(t,investigator_index__inv_id);
 						
 			}
 			if (!institution_index__inst_id.equals("-1") 
-					&& !institution_index__inst_id.equals("") && !Arrays.asList(inst.keySet()).contains(institution_index__inst_id)
+					&& !institution_index__inst_id.equals("") && !inst.keySet().contains(institution_index__inst_id)
 					&& !t.isEmpty() && !t.equals("")) {
 						/**
 						 *  Add the new Inst information to a dictionary, but only if it is not -1. 
