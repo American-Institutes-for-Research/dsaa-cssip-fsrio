@@ -1,0 +1,14 @@
+2016-04-14 01:17:30   Perhaps the link is broken or does not exist - http://ted.europa.eu/udl?uri=TED:NOTICE:328519-2015:TEXT:DE:HTML&tabId=1 . Here is some help with traceback:java.lang.NullPointerException
+	at com.jbt.Efsa.scrape(Efsa.java:237)
+	at com.jbt.Efsa.efsaMain(Efsa.java:75)
+	at com.jbt.Run.main(Run.java:107)
+
+2016-04-14 01:17:30   Perhaps the link is broken or does not exist - HTTP://TED.EUROPA.EU/UDL?URI=TED:NOTICE:207526-2015:TEXT:EN:HTML&SRC=0&TABID=0 . Here is some help with traceback:com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException: 404 Not Found for http://ted.europa.eu/TED/misc/pageNotFound.do
+	at com.gargoylesoftware.htmlunit.WebClient.throwFailingHttpStatusCodeExceptionIfNecessary(WebClient.java:537)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:362)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:417)
+	at com.gargoylesoftware.htmlunit.WebClient.getPage(WebClient.java:402)
+	at com.jbt.Efsa.scrape(Efsa.java:196)
+	at com.jbt.Efsa.efsaMain(Efsa.java:75)
+	at com.jbt.Run.main(Run.java:107)
+
