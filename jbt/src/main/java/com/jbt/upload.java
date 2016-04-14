@@ -106,7 +106,7 @@ public class upload {
 			 * If they exist, we get their IDs, if not, we add them to the database and use the newly assigned ID. 
 			 */
 			if (institution_index__inst_id.equals("-1"))  institution_index__inst_id = checkAddInst(record, conn, dbname);
-			investigator_index__inv_id = getPIid(record, institution_index__inst_id, conn, dbname);
+			if (investigator_index__inv_id.equals("-1")) investigator_index__inv_id = getPIid(record, institution_index__inst_id, conn, dbname);
 			
 			/**
 			 * See if the project already exists in the database.
@@ -133,12 +133,18 @@ public class upload {
 			/**
 			 * Can be multiple PIs and institutions per project
 			 */
+			HashMap<String,String> inst = new HashMap<String,String>();
+			HashMap<String,String> investigator = new HashMap<String,String>();
+			
 			String t = "";
 			int flag = 0;
 			while (true) {
 				try {
 					result.next();
 					t = result.getString("ID");
+					investigator.put(result.getString("inv_id"),t);
+					inst.put(result.getString("inst_id"),t);
+					
 					if (!t.isEmpty() && !t.equals("")) {
 						flag = 1;
 						updateRecord(record, result,conn, dbname);
@@ -151,81 +157,65 @@ public class upload {
 			}
 
 			
-			
 			if(!investigator_index__inv_id.equals("-1") 
-					&& !investigator_index__inv_id.equals("")
+					&& !investigator_index__inv_id.equals("") && !Arrays.asList(investigator.keySet()).contains(investigator_index__inv_id)
 					&& !t.isEmpty() && !t.equals("")) {
 					/**
 					 *  Add the new PI information to a dictionary, but only if it is not -1. 
 					 */
-					String del = "DELETE FROM " + dbname + ".investigator_index where pid = ?;";
-					try {
-						PreparedStatement p = conn.prepareStatement(del);
-						p.setString(1, t);
-						p.executeUpdate();
-					}
-					catch (SQLException e) {
-						e.printStackTrace();
-					}
+					System.out.println(investigator);
+					System.out.println(investigator_index__inv_id);
+					System.out.println(t);
+					
 					PIS.put(t,investigator_index__inv_id);
 						
 			}
 			if (!institution_index__inst_id.equals("-1") 
-					&& !institution_index__inst_id.equals("") 
+					&& !institution_index__inst_id.equals("") && !Arrays.asList(inst.keySet()).contains(institution_index__inst_id)
 					&& !t.isEmpty() && !t.equals("")) {
 						/**
 						 *  Add the new Inst information to a dictionary, but only if it is not -1. 
 						 */
-					String del = "DELETE FROM " + dbname + ".institution_index where pid = ?;";
-					try {
-						PreparedStatement p = conn.prepareStatement(del);
-						p.setString(1, t);
-						p.executeUpdate();
-					}
-					catch (SQLException e) {
-						e.printStackTrace();
-					}
-							INSTITUTIONS.put(t,institution_index__inst_id);
+					INSTITUTIONS.put(t,institution_index__inst_id);
 			}
-		
-			/**
-			 * Now we can update the index tables with all new PI and Institution information.  
-			 */
-			/**
-			 * PI TABLE
-			 */
-			Set<String> keys = PIS.keySet();
-			for(String s : keys) {
-				ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
-				if(list == null) continue;
-				if(list.isEmpty()) continue;
-				Set<String> values = new HashSet<String>(list);  
-				for (String s2: values) {
-					String insertQuery = "INSERT INTO   "+dbname+".investigator_index (pid, inv_id)"
-							+ " VALUES (?, ?);";
-					String arr[] = {s, s2};
-					MysqlConnect.uploadSQL(arr, conn, insertQuery);
-				}
-
+		}
+		/**
+		 * Now we can update the index tables with all new PI and Institution information.  
+		 */
+		/**
+		 * PI TABLE
+		 */
+		Set<String> keys = PIS.keySet();
+		for(String s : keys) {
+			ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
+			if(list == null) continue;
+			if(list.isEmpty()) continue;
+			Set<String> values = new HashSet<String>(list);  
+			for (String s2: values) {
+				String insertQuery = "INSERT INTO   "+dbname+".investigator_index (pid, inv_id)"
+						+ " VALUES (?, ?);";
+				String arr[] = {s, s2};
+				MysqlConnect.uploadSQL(arr, conn, insertQuery);
 			}
 
-			/**
-			 * INSTITUTION TABLE
-			 */
-			keys = INSTITUTIONS.keySet();
-			for(String s : keys) {
-				ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
-				if(list == null) continue;
-				if(list.isEmpty()) continue;
-				Set<String> values = new HashSet<String>(list);  
-				for (String s2: values) {
-					String insertQuery = "INSERT INTO   "+dbname+".institution_index (pid, inst_id)"
-							+ " VALUES (?, ?);";
-					String arr[] = {s, s2};
-					MysqlConnect.uploadSQL(arr, conn, insertQuery);
-				}
+		}
 
+		/**
+		 * INSTITUTION TABLE
+		 */
+		keys = INSTITUTIONS.keySet();
+		for(String s : keys) {
+			ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
+			if(list == null) continue;
+			if(list.isEmpty()) continue;
+			Set<String> values = new HashSet<String>(list);  
+			for (String s2: values) {
+				String insertQuery = "INSERT INTO   "+dbname+".institution_index (pid, inst_id)"
+						+ " VALUES (?, ?);";
+				String arr[] = {s, s2};
+				MysqlConnect.uploadSQL(arr, conn, insertQuery);
 			}
+
 		}
 	}
 	/**
