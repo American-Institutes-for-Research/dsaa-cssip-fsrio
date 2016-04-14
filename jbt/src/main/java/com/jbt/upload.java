@@ -133,16 +133,12 @@ public class upload {
 			/**
 			 * Can be multiple PIs and institutions per project
 			 */
-			HashMap<String,String> inst = new HashMap<String,String>();
-			HashMap<String,String> investigator = new HashMap<String,String>();
 			String t = "";
-			Integer flag = 0;
+			int flag = 0;
 			while (true) {
 				try {
 					result.next();
 					t = result.getString("ID");
-					inst.put(t,result.getString("inst_id"));
-					investigator.put(t,result.getString("inv_id"));
 					if (!t.isEmpty() && !t.equals("")) {
 						flag = 1;
 						updateRecord(record, result,conn, dbname);
@@ -154,20 +150,19 @@ public class upload {
 				insertRecord(record, institution_index__inst_id, investigator_index__inv_id, conn, dbname);
 			}
 
+			
+			
 			if(!investigator_index__inv_id.equals("-1") 
-					&& !investigator_index__inv_id.equals("") && !Arrays.asList(investigator.keySet()).contains(investigator_index__inv_id) 
+					&& !investigator_index__inv_id.equals("")
 					&& !t.isEmpty() && !t.equals("")) {
 					/**
 					 *  Add the new PI information to a dictionary, but only if it is not -1. 
 					 */
-					System.out.println(investigator_index__inv_id);
-					System.out.println(t);
-					System.out.println("_____");
 					PIS.put(t,investigator_index__inv_id);
 						
 			}
 			if (!institution_index__inst_id.equals("-1") 
-					&& !institution_index__inst_id.equals("") && !Arrays.asList(inst.keySet()).contains(institution_index__inst_id) 
+					&& !institution_index__inst_id.equals("") 
 					&& !t.isEmpty() && !t.equals("")) {
 						/**
 						 *  Add the new Inst information to a dictionary, but only if it is not -1. 
@@ -181,8 +176,6 @@ public class upload {
 			/**
 			 * PI TABLE
 			 */
-			//System.out.println(project__PROJECT_NUMBER);
-			//System.out.println(PIS);
 			Set<String> keys = PIS.keySet();
 			for(String s : keys) {
 				ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
