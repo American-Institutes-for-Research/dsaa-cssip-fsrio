@@ -287,5 +287,54 @@ public class MysqlConnect {
 		return status;
     }
 
-	
+    /**
+     * This method executes the update/insert queries required by the upload script. 
+     * 
+     * @param	arr 	The values to be updated/inserted into the database
+	 * @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
+     * @param agency_index__aid Agency ID if agency exists in the FSRIO Research Projects Database. The ID is numeric and assigned based on the agency name.
+     * @return Agency ID if it was found in FSRIO DB. Otherwise, default -1.
+     */
+    public static void uploadSQL(String arr[], Connection conn, String query) {
+    	int size = arr.length;
+    	try {
+    		PreparedStatement preparedStmt = conn.prepareStatement(query);
+
+        	for (int i = 1; i < size; i++ ){
+    			preparedStmt.setString(i, arr[i-1]);
+        	}
+        	preparedStmt.execute();
+    	}
+    	catch(Exception e) {
+    		
+    	}
+		    }
+    
+    /**
+     * This method executes the select queries required by the upload script. 
+     * 
+     * @param	arr 	The values to be updated/inserted into the database
+	 * @param	conn	Database connection initiated once per scraper in the main[Subclass] method.
+     * @param agency_index__aid Agency ID if agency exists in the FSRIO Research Projects Database. The ID is numeric and assigned based on the agency name.
+     * @return Agency ID if it was found in FSRIO DB. Otherwise, default -1.
+     */
+    public static ResultSet uploadSQLResult(String arr[], Connection conn, String query) {
+    	int size = arr.length;
+    	ResultSet result = null;
+    	try {
+    		PreparedStatement preparedStmt = conn.prepareStatement(query);
+
+        	for (int i = 1; i < size; i++ ){
+    			preparedStmt.setString(i, arr[i-1]);
+        	}
+        	result = preparedStmt.executeQuery();
+    	}
+    	catch(Exception e) {
+    		
+    	}
+		 return result;
+		 }
+  	
+
+  	
 }
