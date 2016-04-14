@@ -158,6 +158,15 @@ public class upload {
 					/**
 					 *  Add the new PI information to a dictionary, but only if it is not -1. 
 					 */
+					String del = "DELETE FROM " + dbname + ".investigator_index where pid = ?;";
+					try {
+						PreparedStatement p = conn.prepareStatement(del);
+						p.setString(1, t);
+						p.executeUpdate();
+					}
+					catch (SQLException e) {
+						e.printStackTrace();
+					}
 					PIS.put(t,investigator_index__inv_id);
 						
 			}
@@ -167,6 +176,15 @@ public class upload {
 						/**
 						 *  Add the new Inst information to a dictionary, but only if it is not -1. 
 						 */
+					String del = "DELETE FROM " + dbname + ".institution_index where pid = ?;";
+					try {
+						PreparedStatement p = conn.prepareStatement(del);
+						p.setString(1, t);
+						p.executeUpdate();
+					}
+					catch (SQLException e) {
+						e.printStackTrace();
+					}
 							INSTITUTIONS.put(t,institution_index__inst_id);
 			}
 		
