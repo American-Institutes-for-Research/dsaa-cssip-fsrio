@@ -76,7 +76,7 @@ public class upload {
 		catch(IOException e) {
 			System.out.println("WARNING: The file "+fileName+" was not found. Please make sure that the file exists.");
 		}
-	
+		
 		for (CSVRecord record : records) {
 			String project__PROJECT_NUMBER = "";
 			String project__PROJECT_TITLE = "";
@@ -85,7 +85,7 @@ public class upload {
 			 */
 			ResultSet dummy = null;
 			project__PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record,dummy);
-			if(project__PROJECT_NUMBER.equals("")) project__PROJECT_TITLE = recordGet("project__PROJECT_TITLE", record,dummy);
+			if(project__PROJECT_NUMBER.equals("")) project__PROJECT_TITLE = Junidecode.unidecode(recordGet("project__PROJECT_TITLE", record,dummy));
 			/**
 			* In case both project number and title are missing, we just leave it blank
 			*/
@@ -110,24 +110,35 @@ public class upload {
 			
 			/**
 			 * See if the project already exists in the database.
-			 */			
+			 */	
 			String query = "";
 			ResultSet result = null;
 			
 			if (project__PROJECT_NUMBER.equals("")) {
-				query = "SELECT * FROM  "+dbname+".project p left join "
-						+ " "+dbname+".institution_index inst on inst.pid =  p.id left join "
-						+ "  "+dbname+".investigator_index inv on inv.pid = p.id where PROJECT_TITLE = ? "
+				query = "SELECT ID FROM "+dbname+".project where PROJECT_TITLE = ? "
 						+ " order by date_entered desc limit 1;";
 				String a[] = {project__PROJECT_TITLE};
 				result = MysqlConnect.uploadSQLResult(a, conn, query);
 			} else {
-				query = "SELECT * FROM  "+dbname+".project p left join "
-						+ " "+dbname+".institution_index inst on inst.pid =  p.id left join "
-						+ "  "+dbname+".investigator_index inv on inv.pid = p.id where PROJECT_NUMBER = ? "
+				query = "SELECT ID FROM "+dbname+".project where PROJECT_NUMBER = ? "
 						+ " order by date_entered desc limit 1;";
 				String a[] = {project__PROJECT_NUMBER};
 				result = MysqlConnect.uploadSQLResult(a, conn, query);
+			}
+			
+			String t = "";
+			int flag = 0;
+			try {
+					result.next();
+					t = result.getString("ID");
+					if (!t.equals("")) {
+						flag = 1;
+						updateRecord(record, result,conn, dbname);
+					}
+			} catch (Exception ee) {;}
+			
+			if (flag == 0) {
+				insertRecord(record, institution_index__inst_id, investigator_index__inv_id, conn, dbname);
 			}
 			
 			/**
@@ -136,29 +147,24 @@ public class upload {
 			HashMap<String,String> inst = new HashMap<String,String>();
 			HashMap<String,String> investigator = new HashMap<String,String>();
 			
-			String t = "";
-			int flag = 0;
-			while (true) {
-				try {
-					result.next();
-					t = result.getString("ID");
-					investigator.put(result.getString("inv_id"),t);
-					inst.put(result.getString("inst_id"),t);
-					
-					if (!t.isEmpty() && !t.equals("")) {
-						flag = 1;
-						updateRecord(record, result,conn, dbname);
-					}
-				} catch (Exception ee) {break;}
-			} 
-			
-			if (flag == 0) {
-				insertRecord(record, institution_index__inst_id, investigator_index__inv_id, conn, dbname);
+			if (!t.equals("")) {
+				query = "SELECT * FROM  "+dbname+".project p left join "
+						+ " "+dbname+".institution_index inst on inst.pid =  p.id left join "
+						+ "  "+dbname+".investigator_index inv on inv.pid = p.id where p.ID = ?;";
+				String a[] = {t};
+				result = MysqlConnect.uploadSQLResult(a, conn, query);
+				while (true) {
+					try {
+						result.next();
+						investigator.put(result.getString("inv_id"),t);
+						inst.put(result.getString("inst_id"),t);
+					} catch (Exception ee) {break;}
+				} 
 			}
-
+			
 			if(!investigator_index__inv_id.equals("-1") 
 					&& !investigator_index__inv_id.equals("") && !investigator.keySet().contains(investigator_index__inv_id)
-					&& !t.isEmpty() && !t.equals("")) {
+					&& !t.equals("")) {
 					/**
 					 *  Add the new PI information to a dictionary, but only if it is not -1. 
 					 */
@@ -167,7 +173,7 @@ public class upload {
 			}
 			if (!institution_index__inst_id.equals("-1") 
 					&& !institution_index__inst_id.equals("") && !inst.keySet().contains(institution_index__inst_id)
-					&& !t.isEmpty() && !t.equals("")) {
+					&& !t.equals("")) {
 						/**
 						 *  Add the new Inst information to a dictionary, but only if it is not -1. 
 						 */
@@ -200,7 +206,7 @@ public class upload {
 		 */
 		keys = INSTITUTIONS.keySet();
 		for(String s : keys) {
-			ArrayList<String> list = (ArrayList<String>)(PIS.get(s));
+			ArrayList<String> list = (ArrayList<String>)(INSTITUTIONS.get(s));
 			if(list == null) continue;
 			if(list.isEmpty()) continue;
 			Set<String> values = new HashSet<String>(list);  
@@ -258,7 +264,7 @@ public class upload {
 		 */
 		ResultSet dummy = null;
 		PROJECT_NUMBER = recordGet("project__PROJECT_NUMBER", record,dummy);
-		PROJECT_TITLE = recordGet("project__PROJECT_TITLE", record,dummy);
+		PROJECT_TITLE = Junidecode.unidecode(recordGet("project__PROJECT_TITLE", record,dummy));
 		source_url = recordGet("project__source_url", record,dummy);
 		PROJECT_START_DATE = recordGet("project__PROJECT_START_DATE", record,dummy);
 		PROJECT_END_DATE = recordGet("project__PROJECT_END_DATE", record,dummy);
@@ -367,7 +373,7 @@ public class upload {
 		 * If a newer value is found in CSV, that value is used.
 		 * If no new value is found, the value from the existing record in the database is used.
 		 */
-		PROJECT_TITLE = recordGet("project__PROJECT_TITLE", record, result);
+		PROJECT_TITLE = Junidecode.unidecode(recordGet("project__PROJECT_TITLE", record, result));
 		PROJECT_START_DATE = recordGet("project__PROJECT_START_DATE", record, result);
 		PROJECT_END_DATE = recordGet("project__PROJECT_END_DATE",record, result);
 		PROJECT_TYPE = recordGet("project__PROJECT_TYPE", record, result);
@@ -405,11 +411,24 @@ public class upload {
 			institution_data__INSTITUTION_NAME = recordGet("institution_data__INSTITUTION_NAME", record,dummy);
 		}
 		catch (Exception e) {return "-1";}
-		if (institution_data__INSTITUTION_NAME == "") return "-1";
+		if (institution_data__INSTITUTION_NAME.equals("")) return "-1";
 		String finalID = "";
+		String INSTITUTION_NAME = institution_data__INSTITUTION_NAME;
+		if (INSTITUTION_NAME.length() > 150) {
+			INSTITUTION_NAME = INSTITUTION_NAME.substring(0,149);
+		}
 		/**
 		 * Let's make sure this institution definitely doesn't exist:
 		 */
+		
+		ResultSet checkIndex = null;
+		String checkInst = "SELECT ID from "+dbname+".institution_data where INSTITUTION_NAME = ?;";
+		String check[] = {INSTITUTION_NAME};
+		checkIndex = MysqlConnect.uploadSQLResult(check, conn, checkInst);
+		try {
+			checkIndex.next();
+			return checkIndex.getString(1);
+		} catch (Exception exx) {;}
 		
 		/**
 		 * Get all institutions to apply a matching algorithm based on Jaro-Winkler distance: a bit of on-the-fly disambiguation here.
@@ -462,6 +481,7 @@ public class upload {
 					finalID = institutes.getString("ID");
 					finalInst = inst;
 					finalRatio = ratio;
+					break;
 				}
 
 			}
@@ -475,7 +495,6 @@ public class upload {
 		/**
 		 * Insert new record for the institute
 		 */
-		String INSTITUTION_NAME = "";
 		String INSTITUTION_DEPARTMENT = "";
 		String INSTITUTION_ADDRESS1 = "";
 		String INSTITUTION_ADDRESS2 = "";
@@ -493,21 +512,23 @@ public class upload {
 		INSTITUTION_CITY = recordGet("institution_data__INSTITUTION_CITY", record,dummy);
 		INSTITUTION_STATE = recordGet("institution_data__INSTITUTION_STATE", record,dummy);
 		try {
-				int stateID = Integer.parseInt(INSTITUTION_STATE);
+			int stateID = Integer.parseInt(INSTITUTION_STATE);
 		}
 		catch (Exception e) {
-		INSTITUTION_STATE = "";			}
+			INSTITUTION_STATE = "";			
+		}
 		COMMENTS = recordGet("COMMENTS", record,dummy);
 		INSTITUTION_URL = recordGet("institution_data__INSTITUTION_URL", record,dummy);
 		INSTITUTION_COUNTRY = recordGet("institution_data__INSTITUTION_COUNTRY", record,dummy);
 		if(!INSTITUTION_ADDRESS1.equals("")) INSTITUTION_ADDRESS1 = Junidecode.unidecode(INSTITUTION_ADDRESS1);
 			
+		
 		String insertQuery = "INSERT INTO  "+dbname+".institution_data (INSTITUTION_NAME, INSTITUTION_DEPARTMENT, INSTITUTION_ADDRESS1, "
 				+ "INSTITUTION_ADDRESS2, INSTITUTION_CITY, INSTITUTION_COUNTRY, INSTITUTION_STATE, "
 				+ "INSTITUTION_ZIP, DATE_ENTERED, COMMENTS, INSTITUTION_URL) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 		if (INSTITUTION_COUNTRY.equals("")) INSTITUTION_COUNTRY = "0";
 		if (INSTITUTION_STATE.equals("")) INSTITUTION_STATE = "0";
-
+		
 		String arr[] = {INSTITUTION_NAME, INSTITUTION_DEPARTMENT, INSTITUTION_ADDRESS1, INSTITUTION_ADDRESS2, 
 				INSTITUTION_CITY, INSTITUTION_COUNTRY, INSTITUTION_STATE, INSTITUTION_ZIP, DATE_ENTERED, COMMENTS,
 				INSTITUTION_URL};
@@ -549,17 +570,41 @@ public class upload {
 		try {
 			investigator_data__name = recordGet("investigator_data__name", record,dummy);
 		}
-		catch(Exception e) {;}
+		catch(Exception e) {return "-1";}
 		if (investigator_data__name.equals("")) return "-1";
+		
+		/**
+		 * If we re-upload the same files, we want to double check if the PI does not exist.
+		 */
+		investigator_data__name = Junidecode.unidecode(investigator_data__name);
+		String checkIDsql = "";
+		if (!institution_index__inst_id.equalsIgnoreCase("-1")) {
+			checkIDsql = "SELECT ID FROM  "+dbname+".investigator_data WHERE name = ? and (INSTITUTION = ? or INSTITUTION is NULL);";
+		} else {
+			checkIDsql = "SELECT ID FROM  "+dbname+".investigator_data WHERE name = ? and (INSTITUTION != ? OR INSTITUTION is NULL);";
+		}
+		String checkName = investigator_data__name;
+		String arrCheck[] = {checkName, institution_index__inst_id};
+		ResultSet checkID =null;
+		
+		checkID = MysqlConnect.uploadSQLResult(arrCheck, conn, checkIDsql);
+
+		try {
+			checkID.next();
+			return checkID.getString("ID");
+		}
+		catch (Exception e) {
+		}
+		
 		String query = "";
 		/**
 		 * Some data sources do not have any institution information - so, we just want to make sure that in those cases we still upload PI info.
 		 */
 		if (!institution_index__inst_id.equalsIgnoreCase("-1")) {
-			query = "SELECT ID, name FROM   "+dbname+".investigator_data where INSTITUTION = ?;";
+			query = "SELECT ID, name FROM   "+dbname+".investigator_data where (INSTITUTION = ? OR INSTITUTION is NULL);";
 			
 		} else {
-			query = "SELECT ID, name FROM   "+dbname+".investigator_data where INSTITUTION != ?;";
+			query = "SELECT ID, name FROM   "+dbname+".investigator_data where (INSTITUTION != ? OR INSTITUTION is NULL);";
 		}
 			
 		
@@ -603,7 +648,7 @@ public class upload {
 		String EMAIL_ADDRESS = "";
 		String PHONE_NUMBER = "";
 		String INSTITUTION = institution_index__inst_id;
-		if (INSTITUTION.equalsIgnoreCase("")) INSTITUTION=null; 
+		if (INSTITUTION.equalsIgnoreCase("") || INSTITUTION.equalsIgnoreCase("-1")) INSTITUTION=null; 
 		String DATE_ENTERED = currentStamp;
 
 		

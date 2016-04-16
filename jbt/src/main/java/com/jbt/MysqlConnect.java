@@ -307,7 +307,9 @@ public class MysqlConnect {
         	}
         	preparedStmt.execute();
     	}
-    	catch(Exception e) {
+    	catch(Exception e) { 
+    		System.out.println("WARNING: the DB upload script has run into error. This has not been seen before. Please share the following error with IT support: ");
+    		e.printStackTrace();
     	}
 		    }
     
